@@ -1,0 +1,9 @@
+#Ignorer ces dossiers
+build
+install
+log
+
+#Ou : ignorer tout sauf ce qu'on veut
+#!.gitignore
+#!src/
+#!src/**
