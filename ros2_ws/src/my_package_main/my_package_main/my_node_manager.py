@@ -8,7 +8,6 @@ from typing import Dict
 from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
 
-from ui_manager import ManagerUI
 
 
 ##Classes pour l'orga des données
@@ -33,6 +32,8 @@ class RobotEtat:
 class TaskData:
     """Structure pour les données de tâche à publier"""
     id: int
+    robot: int
+    state: int
     pickup_x: float
     pickup_y: float
     delivery_x: float
@@ -229,21 +230,18 @@ def run_ros(manager_node: ManagerNode):
 def main(args=None):
     rclpy.init(args=args)
     
-    # Créer le node
     manager_node = ManagerNode()
-    
-    # Créer la GUI dans le thread principal
+
+    manager_node.tasks[0] = TaskData(0,1,1,2.0,3.0,4.0,5.0)
+
+    ros_thread = threading.Thread(target=lambda: run_ros(manager_node), daemon=True)
+    ros_thread.start()
+
+    from .ui_manager import ManagerUI
     gui = ManagerUI(manager_node)
     
-    # Lancer ROS2 dans un thread séparé
-    ros_thread = threading.Thread(target=lambda: run_ros(manager_node), daemon=False)
-    ros_thread.start()
-    
-    # Lancer la boucle tkinter dans le thread principal
-    # ✅ CECI EST LA SOLUTION : mainloop dans le thread principal
     gui.run()
     
-    # Cleanup
     rclpy.shutdown()
 
 
