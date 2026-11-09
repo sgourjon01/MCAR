@@ -1,5 +1,5 @@
 from .my_node_manager import ManagerNode
-from .my_node_manager import TaskData
+from .my_node_manager import Task
 
 import queue
 import tkinter as tk
@@ -53,6 +53,36 @@ class ManagerUI:
         self.delivery_entry.pack(side="left", padx=5)
         tk.Button(frame, text="Submit", command=self.submit_task).pack(side="left", padx=5)
 
+        tk.Button(frame, text="Ouvrir", command=self.open_window).pack(side="left", padx=5)
+
+    def open_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Nouvelle fenêtre")
+        win.geometry("300x150")
+        tk.Label(win, text="Bonjour depuis la deuxième fenêtre").pack(pady=20)
+
+        canvas = tk.Canvas(win, width=500, height=400, bg="white")
+        canvas.pack()
+    # Dessins de base (x1, y1, x2, y2 = coin haut-gauche et coin bas-droit)    
+        canvas.create_oval(50, 50, 150, 150, outline="blue", fill="lightblue")
+        canvas.create_rectangle(200, 50, 350, 130, outline="red", width=2)
+        info = tk.Label(win, text="Aucune action").pack()
+        tk.Button(win, text="Fermer", command=win.destroy).pack()
+
+        start = {}
+        def on_click(event):
+            start["x"], start["y"] = event.x, event.y
+            info.config(text=f"Clic en ({event.x}, {event.y})")
+        def on_drag(event):
+            info.config(text=f"Drag en ({event.x}, {event.y})")# Exemple : tracer une ligne pendant le drag
+            canvas.create_line(start["x"], start["y"], event.x, event.y, fill="green")
+            start["x"], start["y"] = event.x, event.y
+        def on_release(event):
+            info.config(text=f"Relâché en ({event.x}, {event.y})")
+        canvas.bind("<Button-1>", on_click)
+        canvas.bind("<B1-Motion>", on_drag)
+        canvas.bind("<ButtonRelease-1>", on_release)
+
     def submit_task(self):
         try:
             robot = int(self.robot_id_combo.get())
@@ -63,8 +93,9 @@ class ManagerUI:
             return
 
         with self.manager_node.lock:
-            task_id = max(self.manager_node.tasks.keys(), default=-1) + 1
-            self.manager_node.tasks[task_id] = TaskData(id=task_id, robot=robot, state=0, pickup_x=pick_up[0], pickup_y=pick_up[1], delivery_x=delivery[0], delivery_y=delivery[1])
+            self.manager_node.add_task(robot=robot,p_x=pick_up[0],p_y=pick_up[1],d_x=delivery[0],d_y=delivery[1])
+            #task_id = max(self.manager_node.tasks.keys(), default=-1) + 1
+            #self.manager_node.tasks[task_id] = Task(id=task_id, robot=robot, state=0, pickup_x=pick_up[0], pickup_y=pick_up[1], delivery_x=delivery[0], delivery_y=delivery[1])
         
         self.pick_entry.delete(0, tk.END)
         self.delivery_entry.delete(0, tk.END)
@@ -85,7 +116,7 @@ class ManagerUI:
     def process_queue(self):
         """Traite les messages de la queue ROS2"""
         try:
-            msg_type, robot_id = self.manager_node.gui_update_queue.get_nowait()
+            msg_type, robot_id = self.manager_node.ui_queue.get_nowait()
             self.update_display()
         except queue.Empty:
             # Queue vide, c'est normal

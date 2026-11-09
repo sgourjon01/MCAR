@@ -7,14 +7,16 @@ from dataclasses import dataclass
 from typing import Dict
 from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
+from .robot_state import RobotState
 
 
 
 ##Classes pour l'orga des données
 @dataclass
-class RobotPosition:
+class RobotInfo:
     """Structure pour stocker les données de position d'un robot"""
     id: int
+    state: int
     x: float
     y: float
     theta: float
@@ -23,13 +25,7 @@ class RobotPosition:
     omega: float
 
 @dataclass
-class RobotEtat:
-    """Structure pour stocker l'état d'un robot"""
-    id: int
-    etat: int
-
-@dataclass
-class TaskData:
+class Task:
     """Structure pour les données de tâche à publier"""
     id: int
     robot: int
@@ -38,6 +34,11 @@ class TaskData:
     pickup_y: float
     delivery_x: float
     delivery_y: float
+
+    PENDING = 0
+    ASSIGNED = 1
+    IN_PROGRESS = 2
+    DONE = 3
 
 
 ##Classe MyManagerNode
@@ -48,13 +49,12 @@ class ManagerNode(Node):
         super().__init__('manager_node')
         
         # Dictionnaires pour stocker jusqu'à 4 positions et états par ID
-        self.positions: Dict[int, RobotPosition] = {}
-        self.etats: Dict[int, RobotEtat] = {}
-        self.tasks: Dict[int, TaskData] = {}
+        self.robots: Dict[int, RobotInfo] = {}
+        self.tasks: Dict[int, Task] = {}
         self.lock = threading.Lock()
         
         # Queue pour communiquer avec l'interface GUI de manière thread-safe
-        self.gui_update_queue = Queue()
+        self.ui_queue = Queue()
         
         # Subscriptions
         self.position_sub = self.create_subscription(
@@ -67,7 +67,7 @@ class ManagerNode(Node):
         self.etat_sub = self.create_subscription(
             Int32MultiArray,
             'etat',
-            self.etat_callback,
+            self.state_callback,
             10
         )
         
@@ -95,7 +95,7 @@ class ManagerNode(Node):
                     self.get_logger().error('Position message format incorrect')
                     return
                 
-                robot_pos = RobotPosition(
+                robot_pos = RobotInfo(
                     id=int(msg.data[6]),
                     x=float(msg.data[0]),
                     y=float(msg.data[1]),
@@ -107,14 +107,14 @@ class ManagerNode(Node):
                 
                 self.get_logger().info('Received "%s"' % msg.data)
                 
-                if len(self.positions) < 4 or robot_pos.id in self.positions:
-                    self.positions[robot_pos.id] = robot_pos
+                if len(self.robots) < 4 or robot_pos.id in self.robots:
+                    self.robots[robot_pos.id] = robot_pos
                     self.get_logger().debug(
                         f'Position updated for robot {robot_pos.id}: '
                         f'({robot_pos.x:.2f}, {robot_pos.y:.2f})'
                     )
                     # Envoyer update à la GUI via queue
-                    self.gui_update_queue.put(('position_update', robot_pos.id))
+                    self.ui_queue.put(('position_update', robot_pos.id))
                 else:
                     self.get_logger().warn(
                         f'Cannot store position for robot {robot_pos.id}: '
@@ -123,42 +123,42 @@ class ManagerNode(Node):
             except (IndexError, ValueError) as e:
                 self.get_logger().error(f'Error parsing position message: {e}')
     
-    def etat_callback(self, msg: Int32MultiArray):
+    def state_callback(self, msg: Int32MultiArray):
         """Callback pour le topic etat
-        Reçoit: [etat, id]
+        Reçoit: [id, etat]
         """
         with self.lock:
             try:
-                if len(msg.data) < 2:
-                    self.get_logger().error('Etat message format incorrect')
+                if len(msg.data) != 2:
+                    self.get_logger().error('Topic State : format incorrect. Format attendu (int,int)')
                     return
+                id_msg = msg.data[0]
+                state_msg = msg.data[1]
+                if id_msg < 1 or id_msg > 4:
+                    self.get_logger().error('Topic State : Id robot invalide.')
+                    return
+                if state_msg < RobotState.WAIT or state_msg > RobotState.TASK_DONE:
+                    self.get_logger().error('Topic State : Etat invalide.')
+                    return
+
+                self.robots[id_msg].state = state_msg
                 
-                robot_etat = RobotEtat(
-                    id=msg.data[1],
-                    etat=msg.data[0]
-                )
-                
-                if len(self.etats) < 4 or robot_etat.id in self.etats:
-                    self.etats[robot_etat.id] = robot_etat
-                    self.get_logger().debug(
-                        f'Etat updated for robot {robot_etat.id}: {robot_etat.etat}'
-                    )
-                    # Envoyer update à la GUI via queue
-                    self.gui_update_queue.put(('etat_update', robot_etat.id))
-                else:
-                    self.get_logger().warn(
-                        f'Cannot store etat for robot {robot_etat.id}: '
-                        f'Maximum 4 robots reached'
-                    )
+                self.ui_queue.put(('state_update', id_msg))
+
             except (IndexError, ValueError) as e:
-                self.get_logger().error(f'Error parsing etat message: {e}')
+                self.get_logger().error(f'Error parsing depuis topic State: {e}')
+
+    def add_task(self, robot:int, p_x:float, p_y:float, d_x:float,d_y:float):
+        task_id = max(self.tasks.keys(), default=-1) + 1
+        self.tasks[task_id] = Task(id=task_id, robot=robot, state=0, pickup_x=p_x, pickup_y=p_y, delivery_x=d_x, delivery_y=d_y)
+
     
     def manage_tasks(self):
         """Fonction principale de traitement"""
         with self.lock:
-            for robot_id in self.positions.keys():
+            for robot_id in self.robots.keys():
                 if robot_id in self.etats:
-                    position = self.positions[robot_id]
+                    position = self.robots[robot_id]
                     etat = self.etats[robot_id]
                     
                     task = self.calculate_task(position, etat)
@@ -166,9 +166,9 @@ class ManagerNode(Node):
                     if task:
                         self.publish_task(task)
     
-    def calculate_task(self, position: RobotPosition, etat: RobotEtat) -> TaskData:
+    def calculate_task(self, position: RobotInfo) -> Task:
         """Calcule les tâches - À implémenter selon votre logique"""
-        task = TaskData(
+        task = Task(
             id=position.id,
             pickup_x=position.x + 1.0,
             pickup_y=position.y + 1.0,
@@ -178,7 +178,7 @@ class ManagerNode(Node):
         
         return task
     
-    def publish_task(self, task: TaskData):
+    def publish_task(self, task: Task):
         """Publie la tâche"""
         try:
             msg = Float32MultiArray()
@@ -195,24 +195,19 @@ class ManagerNode(Node):
         except Exception as e:
             self.get_logger().error(f'Error publishing task: {e}')
     
-    def get_position(self, robot_id: int) -> RobotPosition:
+    def get_position(self, robot_id: int) -> RobotInfo:
         """Récupère la position d'un robot par son ID"""
         with self.lock:
-            return self.positions.get(robot_id)
-    
-    def get_etat(self, robot_id: int) -> RobotEtat:
-        """Récupère l'état d'un robot par son ID"""
-        with self.lock:
-            return self.etats.get(robot_id)
+            return self.robots.get(robot_id)
     
     def get_all_robots(self) -> Dict[int, tuple]:
         """Retourne tous les robots avec leurs positions et états"""
         with self.lock:
             robots = {}
-            for robot_id in self.positions.keys():
+            for robot_id in self.robots.keys():
                 if True:#robot_id in self.etats:
                     robots[robot_id] = (
-                        self.positions[robot_id],
+                        self.robots[robot_id],
                         1#self.etats[robot_id]
                     )
             return robots
@@ -232,7 +227,7 @@ def main(args=None):
     
     manager_node = ManagerNode()
 
-    manager_node.tasks[0] = TaskData(0,1,1,2.0,3.0,4.0,5.0)
+    manager_node.tasks[0] = Task(0,1,1,2.0,3.0,4.0,5.0)
 
     ros_thread = threading.Thread(target=lambda: run_ros(manager_node), daemon=True)
     ros_thread.start()
