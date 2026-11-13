@@ -70,6 +70,7 @@ Le tableau ci-dessous décrit les différents types de tâches ainsi que les él
 | Description | Type de tâche | Corps du message |
 |---|---|---|
 | Ordre de déplacement d'un paquet | `TaskType.MOVE_PACKET` | Position X du paquet [mm] ; Position Y du paquet [mm] ; Position X de la zone de dépôt [mm] ; Position Y de la zone de dépôt [mm] |
+| Accusé de réception de fin de tâche | `TaskType.ACK` | / |
 
 ### robot_state
 
@@ -91,10 +92,10 @@ Les états disponibles sont détaillés ci-dessous :
 
 | État | Description |
 |---|---|
-| `RobotState.WAIT` | Le robot est en attente. Aucune tâche ne lui est actuellement assignée. |
+| `RobotState.WAITING` | Le robot est en attente. Aucune tâche ne lui est actuellement assignée. |
 | `RobotState.SEARCHING_PACKET` | Le robot se dirige vers le colis afin de le récupérer. |
 | `RobotState.TRANSPORTING` | Le robot transporte le colis vers sa destination. |
-| `RobotState.TASK_DONE` | La tâche est terminée. Le robot attend la confirmation du manager avant d'accepter un nouvel ordre ou de passer à l'état `RobotState.WAIT`. |
+| `RobotState.TASK_DONE` | La tâche est terminée. Le robot attend la confirmation du manager avant d'accepter un nouvel ordre ou de passer à l'état `RobotState.WAITING`. |
 
 ### robot_pose
 
