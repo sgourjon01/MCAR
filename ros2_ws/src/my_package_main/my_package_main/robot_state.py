@@ -8,7 +8,9 @@ Enum qui définit les états des robots.
 
 class RobotState:
 
-    WAIT = 1
+    WAITING = 1
     SEARCHING_PACKET = 2
     TRANSPORTING = 3
     TASK_DONE = 4
+
+    STR_STATE = ["None","Waiting","Searching pkg","Transporting pkg","Task done"]
