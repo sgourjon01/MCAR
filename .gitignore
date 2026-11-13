@@ -2,6 +2,7 @@
 build
 install
 log
+.vscode
 
 #Ou : ignorer tout sauf ce qu'on veut
 #!.gitignore
