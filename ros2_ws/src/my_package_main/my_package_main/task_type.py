@@ -12,4 +12,5 @@ class TaskType:
     aux robots.
     """
 
+    ACK = 1
     MOVE_PACKET = 1
