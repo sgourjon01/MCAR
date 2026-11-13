@@ -2,13 +2,16 @@
 Mathias Bouchut--Loubet
 09/11/2026
 
-Classe qui contient la carte.
+Constantes de la carte pour tous les noeuds.
 """
 
 import numpy as np
 from math import floor
 
 class Map:
+    """
+    Classe qui contient les infos de la carte.
+    """
 
     # Carte de démo
     MAP_TABLE = np.array([
