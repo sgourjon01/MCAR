@@ -51,9 +51,12 @@ class RobotNode(Node):
         Subscriber task
         Traitement des ordes du Manager.
         """
+
+        if len(msg.data) <= 0:
+            # Message vide
+            return
         
         # TODO
-        pass
 
     def listener_pose(self, msg):
         """
@@ -75,10 +78,13 @@ class RobotNode(Node):
             self.__vel_l[0] = msg.data[4]
             self.__vel_l[1] = msg.data[5]
             self.__vel_a = msg.data[6]
+
+        # TODO mise à jour pour ORCA
     
     def loop(self):
         """
         Main loop
+        Logique principale
         """
 
         # TODO
