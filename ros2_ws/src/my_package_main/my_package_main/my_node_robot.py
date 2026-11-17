@@ -2,6 +2,9 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int8MultiArray, Float32MultiArray
 import sys
+import numpy as np
+
+from .robot_state import RobotState
 
 
 class RobotNode(Node):
@@ -14,8 +17,19 @@ class RobotNode(Node):
         self.robot_id = robot_id
         self.name = "Robot_"+robot_id
         
-        # Constantes du robot
+        # -- Constantes du robot --
         self.r = 91 * 1e-3 # 91 mm
+
+        # -- Variables du robot --
+
+        self.__state = RobotState.WAITING
+
+        self.__pos_l = np.zeros(2)
+        self.__pos_a = 0.0
+        self.__vel_l = np.zeros(2)
+        self.__vel_a = 0.0
+
+        # -- Init sub et pub --
 
         # Subscriber task
         self.task_sub = self.create_subscription(Float32MultiArray,"/robot_task", self.listener_task, 10)
@@ -26,7 +40,7 @@ class RobotNode(Node):
         # Publisher state
         self.state_pub = self.create_publisher(Int8MultiArray, "/robot_state", 10)
         
-        # Main loop
+        # -- Main loop --
         loop_timer_period = 0.1  # secondes
         self.timer = self.create_timer(loop_timer_period, self.loop)
         

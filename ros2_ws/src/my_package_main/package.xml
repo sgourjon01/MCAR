@@ -13,6 +13,7 @@
   <test_depend>python3-pytest</test_depend>
 
   <test_depend>sys</test_depend>
+  <test_depend>numpy</test_depend>
   <test_depend>std_msgs</test_depend>
 
   <export>
