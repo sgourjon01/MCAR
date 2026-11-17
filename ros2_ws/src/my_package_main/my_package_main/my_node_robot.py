@@ -12,10 +12,10 @@ class RobotNode(Node):
     Classe qui gère un robot.
     """
 
-    def __init__(self, robot_id):
-        super().__init__("Robot_"+robot_id)
+    def __init__(self, robot_id: int):
+        super().__init__("Robot_"+str(robot_id))
         self.robot_id = robot_id
-        self.name = "Robot_"+robot_id
+        self.name = "Robot_"+str(robot_id)
         
         # -- Constantes du robot --
         self.r = 91 * 1e-3 # 91 mm
@@ -60,9 +60,21 @@ class RobotNode(Node):
         Subscriber pose
         Actualisation des variables du robot.
         """
-        
-        # TODO
-        pass
+
+        if len(msg.data) != 7:
+            # Message non conforme
+            return
+
+        id = msg.data[0]
+
+        if id == self.robot_id:
+            # Mise a jour pose si c'est la pose du robot
+            self.__pos_l[0] = msg.data[1]
+            self.__pos_l[1] = msg.data[2]
+            self.__pos_a = msg.data[3]
+            self.__vel_l[0] = msg.data[4]
+            self.__vel_l[1] = msg.data[5]
+            self.__vel_a = msg.data[6]
     
     def loop(self):
         """
@@ -74,7 +86,7 @@ class RobotNode(Node):
     
 
 def main(args=None):
-    robot_id = str(sys.argv[1]) if len(sys.argv) > 1 else "None"
+    robot_id = int(sys.argv[1]) if len(sys.argv) > 1 else "None"
     
     rclpy.init(args=args)
     node = RobotNode(robot_id)
