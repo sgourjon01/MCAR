@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node_manager = my_package_main.my_node_manager:main'
+            'my_node_manager = my_package_main.my_node_manager:main',
+            'my_node_robot = my_package_main.my_node_robot:main'
         ],
     },
 )
