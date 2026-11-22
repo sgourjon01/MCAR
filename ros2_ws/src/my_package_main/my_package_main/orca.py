@@ -15,7 +15,7 @@ from map import Map
 # Distance max pour être considéré comme robot voisin
 NEIGHBOR_DIST = 300 # mm
 
-# Nombre maximum de robots voisin considérés
+# Nombre maximum de robots voisins considérés
 MAX_NEIGHBORS = 5
 
 # Horizon de prédiction pour éviter les autres agents
@@ -60,7 +60,7 @@ class ORCA:
 
         for row in range(Map.X):
             for column in range(Map.Y):
-                # On traite que les obstacles
+                # On ne traite que les obstacles
                 if Map.MAP_TABLE[row, column] != 1:
                     continue
 
@@ -83,8 +83,9 @@ class ORCA:
         Met à jour la pose d'un robot.
 
         Pre:
-            Un entier strictement positif pour l'identifiant du robot et deux couples
-            de flotants pour sa position et sa vitesse dans le repère du sol en mm et mm/s.
+            Un entier strictement positif pour l'identifiant du robot et
+            deux couples de flottants pour sa position et sa vitesse dans
+            le repère du sol en mm et mm/s.
         """
         assert type(id) == int and id > 0
 
@@ -100,12 +101,12 @@ class ORCA:
     def compute_optimal_velocity(self, speed_pref: tuple)->tuple:
         """
         Calcule la vitesse optimale au plus proche de la vitesse
-        désiré en évitant les autres robots.
+        désirée en évitant les autres robots.
 
         Pre :
-            Un couple de flotants représentant la vitesse désiré.
+            Un couple de flottants représentant la vitesse désirée.
         Post :
-            un couple de flotatns représentant la vitesse optimale.
+            un couple de flottants représentant la vitesse optimale.
         """
         self.simulator.setAgentPrefVelocity(self.agents[self.master_id], Vector2(*speed_pref))
 
