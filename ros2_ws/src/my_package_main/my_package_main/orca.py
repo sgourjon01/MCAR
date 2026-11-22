@@ -32,6 +32,8 @@ class ORCA:
 
     def __init__(self):
         self.simulator = None
+        self.agents = {} # {robot_id : agent_index}
+
         self.init_simulator()
 
     def init_simulator(self):
@@ -73,3 +75,22 @@ class ORCA:
                 obstacles.append((x0, y0, Map.SIZE, Map.SIZE))
 
         self.simulator.processObstacles()
+
+    def update_agent(self, id: int, pos: tuple, speed: tuple):
+        """
+        Met à jour la pose d'un robot.
+
+        Pre:
+            Un entier strictement positif pour l'identifiant du robot et deux couples
+            de flotants pour sa position et sa vitesse dans le repère du sol en mm et mm/s.
+        """
+        assert type(id) == int and id > 0
+
+        if id not in self.agents.keys():
+            self.agents[id] = self.simulator.addAgent(
+                position=Vector2(*pos),
+                velocity=Vector2(*speed)
+            )
+        else:
+            self.simulator.setAgentPosition(self.agents[id], Vector2(*pos))
+            self.simulator.setAgentVelocity(self.agents[id], Vector2(*speed))
