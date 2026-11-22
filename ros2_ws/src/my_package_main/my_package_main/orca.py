@@ -9,7 +9,7 @@ les mouvements des robots sans collisions.
 
 from .rvo2_python import RVOSimulator, Vector2
 
-from map import Map
+from .map import Map
 
 
 # Distance max pour être considéré comme robot voisin
@@ -48,6 +48,8 @@ class ORCA:
             maxNeighbors=MAX_NEIGHBORS,
             timeHorizon=TIMER_HORIZON,
             timeHorizonObst=TIMER_HORIZON_OBST
+            # radius=None, # TODO
+            # maxSpeed=None # TODO
         )
 
         self.__create_obstacle()
