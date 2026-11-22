@@ -45,3 +45,35 @@ class ThetaStar:
         # Si besoin
         # map_.fill_boundary_with_obstacles() # Obstacles sur les bords
         # map_.inflate_obstacles(radius=2) # Augmente épaisseurs obstacles
+
+    def compute_waypoints(self, start: tuple, end: tuple)->list:
+        """
+        Calcul les points de passages entre le point de départ et d'arrivé.
+
+        Pre:
+            Deux couples d'entier positif représentant les points de départ et d'arrivé.
+        Post:
+            Une liste de couple d'entier positif des points de passages.
+        """
+
+        # On garde en mémoire pour remettre en place la Grid
+        save_start = self.grid[start]
+        save_end = self.grid[end]
+
+        # Vérification départ et arrivé pas dans un obstacle
+        if save_start == TYPES.OBSTACLE or save_end == TYPES.OBSTACLE:
+            return []
+
+        # Mise à jour de la Grid
+        self.grid[start] = TYPES.START
+        self.grid[end] = TYPES.GOAL
+
+        # Calcul des points de passages
+        planner = TS(map_=self.grid, start=start, goal=end)
+        path, path_info = planner.plan()
+
+        # Remise en place de la Grid
+        self.grid[start] = save_start
+        self.grid[end] = save_end
+
+        return path
