@@ -5,6 +5,7 @@ import sys
 import numpy as np
 
 from .robot_state import RobotState
+from .theta_star import ThetaStar
 
 
 class RobotNode(Node):
@@ -21,6 +22,8 @@ class RobotNode(Node):
         self.r = 91 * 1e-3 # 91 mm
 
         # -- Variables du robot --
+
+        self.theta_star = ThetaStar()
 
         self.__state = RobotState.WAITING
 
