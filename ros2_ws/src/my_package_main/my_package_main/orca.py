@@ -30,9 +30,11 @@ class ORCA:
     Classe qui implémente l'algorithme ORCA.
     """
 
-    def __init__(self):
+    def __init__(self, robot_id: int):
         self.simulator = None
         self.agents = {} # {robot_id : agent_index}
+
+        self.master_id = robot_id
 
         self.init_simulator()
 
@@ -94,3 +96,23 @@ class ORCA:
         else:
             self.simulator.setAgentPosition(self.agents[id], Vector2(*pos))
             self.simulator.setAgentVelocity(self.agents[id], Vector2(*speed))
+
+    def compute_optimal_velocity(self, speed_pref: tuple)->tuple:
+        """
+        Calcule la vitesse optimale au plus proche de la vitesse
+        désiré en évitant les autres robots.
+
+        Pre :
+            Un couple de flotants représentant la vitesse désiré.
+        Post :
+            un couple de flotatns représentant la vitesse optimale.
+        """
+        self.simulator.setAgentPrefVelocity(self.agents[self.master_id], Vector2(*speed_pref))
+
+        # Pas de simulation
+        self.simulator.doStep()
+
+        # Récupération vitesse optimisée
+        speed_opt = self.simulator.getAgentVelocity(self.agents[self.master_id])
+
+        return speed_opt.x_, speed_opt.y_
