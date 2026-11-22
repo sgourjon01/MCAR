@@ -6,6 +6,7 @@ import numpy as np
 
 from .robot_state import RobotState
 from .theta_star import ThetaStar
+from .orca import ORCA
 
 
 class RobotNode(Node):
@@ -24,6 +25,7 @@ class RobotNode(Node):
         # -- Variables du robot --
 
         self.theta_star = ThetaStar()
+        self.orca = ORCA(self.robot_id)
 
         self.__state = RobotState.WAITING
 
