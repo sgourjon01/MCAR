@@ -77,3 +77,46 @@ class ThetaStar:
         self.grid[end] = save_end
 
         return path
+
+    def has_line_of_sight(self, a, b)->bool:
+        """
+        Vérifie si deux points peuvent être reliés en ligne droite
+        sans rencontrer d'obstacles.
+        Algorithme de Bresenham utilisé pour tracer la ligne.
+
+        Pre:
+            Deux couples d'entier positif représentant les deux points.
+        Post:
+            Un booléen ; vrai : accessible, faux : obstacle présent.
+        """
+
+        x0, y0 = a
+        x1, y1 = b
+
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+
+        err = dx - dy
+
+        while True:
+            # Vérification de la cellule courante
+            if self.grid[x0, y0] == TYPES.OBSTACLE:
+                return False
+
+            # Toutes les cellules de la ligne testées
+            if (x0, y0) == (x1, y1):
+                break
+
+            # Cellule suivante (Algo de Bresenham)
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+
+        return True
