@@ -3,10 +3,10 @@ Mathias
 Bouchut--Loubet
 22/11/2026
 
-Classe qui implémente l'algorithme Theta Star pour
-calculer les points de passages des robots.
+Classe qui implémente l'algorithme Theta Star pour calculer
+les points de passage des robots.
 
-Lib utilisé :
+Bibliothèque utilisée :
 pip install python-motion-planning
 https://ai-winter.github.io/python_motion_planning/latest/index.html
 """
@@ -19,7 +19,7 @@ from .map import Map
 
 class ThetaStar:
     """
-    Classe qui implémente Theta Star.
+    Classe qui implémente l'algorithme Theta Star.
     """
 
     def __init__(self):
@@ -34,7 +34,7 @@ class ThetaStar:
         # Création de la Grid
         self.grid = Grid(bounds=[[0, Map.X], [0, Map.Y]])
 
-        # Remplissage avec les données de Map
+        # Remplissage à partir des données de Map
         for y in range(Map.Y):
             for x in range(Map.X):
                 if Map.MAP_TABLE[y, x] == 1:
@@ -44,16 +44,17 @@ class ThetaStar:
 
         # Si besoin
         # map_.fill_boundary_with_obstacles() # Obstacles sur les bords
-        # map_.inflate_obstacles(radius=2) # Augmente épaisseurs obstacles
+        # map_.inflate_obstacles(radius=2) # Augmente épaisseur obstacles
 
     def compute_waypoints(self, start: tuple, end: tuple)->list:
         """
-        Calcul les points de passages entre le point de départ et d'arrivé.
+        Calcule les points de passage entre le point de départ et
+        le point d'arrivée.
 
         Pre:
-            Deux couples d'entier positif représentant les points de départ et d'arrivé.
+            Deux couples d'entiers positifs représentant les points de départ et d'arrivée.
         Post:
-            Une liste de couple d'entier positif des points de passages.
+            Une liste de couples d'entiers positifs représentant les points de passage.
         """
 
         # On garde en mémoire pour remettre en place la Grid
@@ -68,7 +69,7 @@ class ThetaStar:
         self.grid[start] = TYPES.START
         self.grid[end] = TYPES.GOAL
 
-        # Calcul des points de passages
+        # Calcul des points de passage
         planner = TS(map_=self.grid, start=start, goal=end)
         path, path_info = planner.plan()
 
@@ -78,16 +79,16 @@ class ThetaStar:
 
         return path
 
-    def has_line_of_sight(self, a, b)->bool:
+    def has_line_of_sight(self, a: tuple, b: tuple)->bool:
         """
         Vérifie si deux points peuvent être reliés en ligne droite
         sans rencontrer d'obstacles.
         Algorithme de Bresenham utilisé pour tracer la ligne.
 
         Pre:
-            Deux couples d'entier positif représentant les deux points.
+            Deux couples d'entiers positifs représentant les deux points.
         Post:
-            Un booléen ; vrai : accessible, faux : obstacle présent.
+            Un booléen : vrai si le passage est libre, faux si un obstacle est présent.
         """
 
         x0, y0 = a
@@ -110,7 +111,7 @@ class ThetaStar:
             if (x0, y0) == (x1, y1):
                 break
 
-            # Cellule suivante (Algo de Bresenham)
+            # Cellule suivante (algo de Bresenham)
             e2 = 2 * err
             if e2 > -dy:
                 err -= dy
