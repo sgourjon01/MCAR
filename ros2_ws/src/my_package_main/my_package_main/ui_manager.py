@@ -1,6 +1,7 @@
 from .my_node_manager import ManagerNode
 from .my_node_manager import Task, RobotInfo
 from .map import Map
+from .robot_state import RobotState
 
 from math import cos, sin
 import queue
@@ -77,7 +78,7 @@ class ManagerUI:
         # Options
         ##Affichage
         tk.Label(map_container, text="Options", font=("Arial", 12, "bold")).pack()
-        tk.Label(map_container, text="Display", font=("Arial", 12, "bold")).pack(anchor="w", pady=10)
+        tk.Label(map_container, text="\nDisplay", font=("Arial", 12, "bold")).pack(anchor="w")
         self.display_pending = tk.BooleanVar(value=True)
         self.display_assigned = tk.BooleanVar(value=True)
         self.display_progressing = tk.BooleanVar(value=False)
@@ -88,7 +89,7 @@ class ManagerUI:
         tk.Checkbutton(map_container, text="Tasks done", variable=self.display_done).pack(anchor="w")
 
         ##Taches
-        tk.Label(map_container, text="Tasks", font=("Arial", 12, "bold")).pack(anchor="w", pady=10)
+        tk.Label(map_container, text="\nTasks", font=("Arial", 12, "bold")).pack(anchor="w")
         task_info = tk.Label(map_container, text=f"Create a task :\nPickup (shift+clic):\nDelivery (alt+clic):", justify="left")
         task_info.pack(anchor="w")
         #
@@ -119,14 +120,14 @@ class ManagerUI:
         tk.Checkbutton(map_container, text="Auto create tasks", variable=auto_tasks, command=set_auto_tasks).pack(anchor="w")
 
 
-        ##Obstacles
+        ###Obstacles
         obstacle_size_px = Map.SIZE * PX_PAR_MM
         for x in range(Map.Y):
             for y in range(Map.X):
                 if Map.MAP_TABLE[y,x] == 1:
                     self.canvas.create_rectangle(x*obstacle_size_px, y*obstacle_size_px, (x+1)*obstacle_size_px, (y+1)*obstacle_size_px,outline="black",fill="grey")
 
-        ##Robots
+        ###Robots
         rob_diam_px = 2 * ROBOT_RADIUS * PX_PAR_MM
         self.canvas.create_oval(100, 100, 100+rob_diam_px, 100+rob_diam_px, outline=STATE_COLORS[0], fill=ROBOT_COLORS[1], tags="c1", width=2)
         self.canvas.create_oval(200, 200, 200+rob_diam_px, 200+rob_diam_px, outline=STATE_COLORS[0], fill=ROBOT_COLORS[2], tags="c2", width=2)
@@ -138,12 +139,22 @@ class ManagerUI:
         self.canvas.create_line(100, 100, 100 - ROBOT_RADIUS * PX_PAR_MM, 100 - ROBOT_RADIUS * PX_PAR_MM, fill=STATE_COLORS[0], tags="l3", width=2)
         self.canvas.create_line(100, 100, 100 - ROBOT_RADIUS * PX_PAR_MM, 100 - ROBOT_RADIUS * PX_PAR_MM, fill=STATE_COLORS[0], tags="l4", width=2)
 
-        self.canvas.create_text(100, 100, text="1", tags="t1", font=("Old English Text MT",15,"italic"), fill=ROBOT_COLORS[1])
-        self.canvas.create_text(100, 100, text="2", tags="t2", font=("Old English Text MT",15,"italic"), fill=ROBOT_COLORS[2])
-        self.canvas.create_text(100, 100, text="3", tags="t3", font=("Old English Text MT",15,"italic"), fill=ROBOT_COLORS[3])
-        self.canvas.create_text(100, 100, text="4", tags="t4", font=("Old English Text MT",15,"italic"), fill=ROBOT_COLORS[4])
+        self.canvas.create_text(100, 100, text="1", tags="t1", font=("Old English Text MT",13,"bold italic"), fill=ROBOT_COLORS[1])
+        self.canvas.create_text(100, 100, text="2", tags="t2", font=("Old English Text MT",13,"bold italic"), fill=ROBOT_COLORS[2])
+        self.canvas.create_text(100, 100, text="3", tags="t3", font=("Old English Text MT",13,"bold italic"), fill=ROBOT_COLORS[3])
+        self.canvas.create_text(100, 100, text="4", tags="t4", font=("Old English Text MT",13,"bold italic"), fill=ROBOT_COLORS[4])
 
-        tk.Label(map_container, text="Test", font=("Arial", 12, "bold")).pack(anchor="w", pady=10)
+        ##Legende
+        #"■"
+        tk.Label(map_container, text="\nLégende", font=("Arial", 12, "bold")).pack(anchor="w")
+        tk.Label(map_container, text="Robot state (outline) :").pack(anchor="w")
+        tk.Label(map_container, text="■ : "+RobotState.STR_STATE[0], fg=STATE_COLORS[0]).pack(anchor="w")
+        tk.Label(map_container, text="■ : "+RobotState.STR_STATE[1], fg=STATE_COLORS[1]).pack(anchor="w")
+        tk.Label(map_container, text="■ : "+RobotState.STR_STATE[2], fg=STATE_COLORS[2]).pack(anchor="w")
+        tk.Label(map_container, text="■ : "+RobotState.STR_STATE[3], fg=STATE_COLORS[3]).pack(anchor="w")
+        tk.Label(map_container, text="■ : "+RobotState.STR_STATE[4], fg=STATE_COLORS[4]).pack(anchor="w")
+        ##Tests
+        tk.Label(map_container, text="\nTest", font=("Arial", 12, "bold")).pack(anchor="w")
         #
         def test_move():
             msg = Float32MultiArray()
@@ -168,14 +179,14 @@ class ManagerUI:
             set_task_info_text()
             if pckp[0] > 0 and delv[0] > 0:
                 self.canvas.delete("tmp_task")
-                self.draw_task(pckp[0], pckp[1], delv[0], delv[1], "tmp_task", "crimson")
+                self.canvas.create_line(pckp[0] * PX_PAR_MM, pckp[1] * PX_PAR_MM, delv[0] * PX_PAR_MM, delv[1] * PX_PAR_MM, fill="crimson", tags="tmp_task", arrow="last")
 
         def on_drag_delivery(event):
             delv[0], delv[1] = event.x/PX_PAR_MM, event.y/PX_PAR_MM
             set_task_info_text()
             if pckp[0] > 0 and delv[0] > 0:
                 self.canvas.delete("tmp_task")
-                self.draw_task(pckp[0], pckp[1], delv[0], delv[1], "tmp_task", "crimson")
+                self.canvas.create_line(pckp[0] * PX_PAR_MM, pckp[1] * PX_PAR_MM, delv[0] * PX_PAR_MM, delv[1] * PX_PAR_MM, fill="crimson", tags="tmp_task", arrow="last")
 
         self.canvas.bind("<Shift-Motion>", on_drag_pickup)
         self.canvas.bind("<Alt-Motion>", on_drag_delivery)
@@ -195,15 +206,16 @@ class ManagerUI:
             self.tree.insert("", "end",
                              values=(task.id, task.robot, Task.STR_STATE[task.state], f"({task.pickup_x};{task.pickup_y})",f"({task.delivery_x};{task.delivery_y})",))
             if (task_display_state & (1 << (task.state))) != 0: #(self.display_pending.get() and task.state == Task.PENDING) or (self.display_assigned.get() and task.state == Task.ASSIGNED) or (self.display_progressing.get() and task.state == Task.IN_PROGRESS) or (self.display_done.get() and task.state == Task.DONE):
-                self.draw_task(task.pickup_x, task.pickup_y, task.delivery_x, task.delivery_y, "task", ROBOT_COLORS[task.robot])
+                self.draw_task(task=task)
 
         for r in robots:
             self.move_robot(r, r.id)
             self.canvas.itemconfig("c" + str(r.id), outline=STATE_COLORS[r.state])
             self.canvas.itemconfig("l" + str(r.id), fill=STATE_COLORS[r.state])
 
-    def draw_task(self, p_x, p_y, d_x, d_y, _tag, _color):
-        self.canvas.create_line(p_x * PX_PAR_MM, p_y * PX_PAR_MM, d_x * PX_PAR_MM, d_y * PX_PAR_MM, fill=_color, tags=_tag, arrow="last")
+    def draw_task(self, task:Task):
+        self.canvas.create_line(task.pickup_x * PX_PAR_MM, task.pickup_y * PX_PAR_MM, task.delivery_x * PX_PAR_MM, task.delivery_y * PX_PAR_MM, fill=ROBOT_COLORS[task.robot], tags="task", arrow="last")
+        self.canvas.create_text(task.pickup_x * PX_PAR_MM, task.pickup_y * PX_PAR_MM, text=str(task.id), tags="task", font=("Arial",10,"normal"), fill=ROBOT_COLORS[task.robot], anchor="nw")
     
     def move_robot(self, robot:RobotInfo, tag:int):
         self.canvas.moveto("c" + str(tag),(robot.x - ROBOT_RADIUS) * PX_PAR_MM, (robot.y - ROBOT_RADIUS) * PX_PAR_MM)
