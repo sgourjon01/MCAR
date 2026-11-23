@@ -63,6 +63,10 @@ class ManagerUI:
     rad = 0
 
     def setup_map_window(self):
+        if (getattr(self, "canvas", None) is not None):
+            if self.canvas.winfo_exists():
+                return
+            
         win = tk.Toplevel(self.root)
         win.title("Warehouse Map")
         win.geometry(str(int(Map.X*Map.SIZE*PX_PAR_MM)+360)+"x"+str(int(Map.Y*Map.SIZE*PX_PAR_MM))+"+960+0")
