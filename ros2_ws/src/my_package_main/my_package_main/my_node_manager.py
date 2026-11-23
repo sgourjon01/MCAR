@@ -61,6 +61,8 @@ class ManagerNode(Node):
 
         self.tasks: Dict[int, Task] = {}
         self.lock = threading.Lock()
+
+        self.auto_tasks = False
         
         # Queue pour communiquer avec l'interface GUI de manière thread-safe
         self.ui_queue = Queue()
@@ -161,6 +163,7 @@ class ManagerNode(Node):
         self.tasks[task_id] = Task(id=task_id, robot=0, state=0, pickup_x=p_x, pickup_y=p_y, delivery_x=d_x, delivery_y=d_y)
 
         self.assign_task(task_id=task_id)
+        self.ui_queue.put(('task_add', task_id))
 
     def assign_task(self, task_id):
         for robot in self.robots.values():
