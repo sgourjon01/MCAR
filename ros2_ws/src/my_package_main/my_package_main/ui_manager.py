@@ -44,29 +44,30 @@ class ManagerUI:
         # Ligne de saisie
         frame = tk.Frame(self.root)
         frame.pack(pady=15)
-        self.robot_id_combo = ttk.Combobox(frame, values=[1, 2, 3, 4], state="readonly", width=12,)
-        self.robot_id_combo.current(0)
-        self.robot_id_combo.pack(side="left", padx=5)
+        #self.robot_id_combo = ttk.Combobox(frame, values=["1", "2", "3", "4"], state="readonly", width=12,)
+        #self.robot_id_combo.current(0)
+        #self.robot_id_combo.pack(side="left", padx=5)
         self.pick_entry = tk.Entry(frame, width=14)     # format "x;y"
         self.pick_entry.pack(side="left", padx=5)
         self.delivery_entry = tk.Entry(frame, width=14)  # format "x;y"
         self.delivery_entry.pack(side="left", padx=5)
         tk.Button(frame, text="Submit", command=self.submit_task).pack(side="left", padx=5)
 
-        tk.Button(frame, text="Ouvrir", command=self.open_window).pack(side="left", padx=5)
+        tk.Button(frame, text="Open map", command=self.map_window).pack(padx=5)
 
-    def open_window(self):
+    def map_window(self):
         win = tk.Toplevel(self.root)
-        win.title("Nouvelle fenêtre")
-        win.geometry("300x150")
+        win.title("Warehouse Map")
+        win.geometry("720x360")
         tk.Label(win, text="Bonjour depuis la deuxième fenêtre").pack(pady=20)
 
-        canvas = tk.Canvas(win, width=500, height=400, bg="white")
+        canvas = tk.Canvas(win, bg="white")
         canvas.pack()
     # Dessins de base (x1, y1, x2, y2 = coin haut-gauche et coin bas-droit)    
         canvas.create_oval(50, 50, 150, 150, outline="blue", fill="lightblue")
         canvas.create_rectangle(200, 50, 350, 130, outline="red", width=2)
-        info = tk.Label(win, text="Aucune action").pack()
+        info = tk.Label(win, text="Aucune action")
+        info.pack()
         tk.Button(win, text="Fermer", command=win.destroy).pack()
 
         start = {}
@@ -79,13 +80,16 @@ class ManagerUI:
             start["x"], start["y"] = event.x, event.y
         def on_release(event):
             info.config(text=f"Relâché en ({event.x}, {event.y})")
+        def on_right(event):
+                    info.config(text=f"Clic droit en ({event.x}, {event.y})")
         canvas.bind("<Button-1>", on_click)
         canvas.bind("<B1-Motion>", on_drag)
         canvas.bind("<ButtonRelease-1>", on_release)
+        canvas.bind("<Button-2>", on_right)
 
     def submit_task(self):
         try:
-            robot = int(self.robot_id_combo.get())
+            #robot = int(self.robot_id_combo.get())
             pick_up = parse_vector(self.pick_entry.get())
             delivery = parse_vector(self.delivery_entry.get())
         except ValueError:
@@ -93,7 +97,7 @@ class ManagerUI:
             return
 
         with self.manager_node.lock:
-            self.manager_node.add_task(robot=robot,p_x=pick_up[0],p_y=pick_up[1],d_x=delivery[0],d_y=delivery[1])
+            self.manager_node.create_task(p_x=pick_up[0],p_y=pick_up[1],d_x=delivery[0],d_y=delivery[1])
             #task_id = max(self.manager_node.tasks.keys(), default=-1) + 1
             #self.manager_node.tasks[task_id] = Task(id=task_id, robot=robot, state=0, pickup_x=pick_up[0], pickup_y=pick_up[1], delivery_x=delivery[0], delivery_y=delivery[1])
         
@@ -110,7 +114,7 @@ class ManagerUI:
         self.tree.delete(*self.tree.get_children())
         for task in all_tasks:
             self.tree.insert("", "end",
-                             values=(task.id, task.robot, task.state, f"({task.pickup_x};{task.pickup_y})",f"({task.delivery_x};{task.delivery_y})",))
+                             values=(task.id, task.robot, Task.STR_STATE[task.state], f"({task.pickup_x};{task.pickup_y})",f"({task.delivery_x};{task.delivery_y})",))
         
     
     def process_queue(self):
