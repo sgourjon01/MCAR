@@ -25,8 +25,7 @@ class Map:
     ])
 
     # Taille du tableau X/Y
-    X = 6
-    Y = 6
+    X, Y = MAP_TABLE.shape
 
     # Correspondance taille réel
     # [mm/cellule]
