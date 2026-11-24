@@ -6,7 +6,6 @@ Constantes de la carte pour tous les noeuds.
 """
 
 import numpy as np
-from math import floor
 
 class Map:
     """
@@ -31,8 +30,3 @@ class Map:
     # Correspondance taille réel
     # [mm/cellule]
     SIZE = 100
-
-def obstacle(_x:float, _y:float):
-    _X = floor(_x/Map.SIZE)
-    _Y = floor(_y/Map.SIZE)
-    return _X < 0 or _X > Map.X - 1 or _Y < 0 or _Y > Map.Y - 1 or Map.MAP_TABLE[_X,_Y] == 1

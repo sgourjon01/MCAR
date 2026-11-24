@@ -7,11 +7,15 @@ from dataclasses import dataclass
 from typing import Dict
 from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
+from math import floor
 
-from .enum.robot_state import RobotState
-from .enum.map import obstacle
+from .enum import RobotState
+from .enum import Map
 
-
+def obstacle(_x:float, _y:float):
+    _X = floor(_x/Map.SIZE)
+    _Y = floor(_y/Map.SIZE)
+    return _X < 0 or _X > Map.X - 1 or _Y < 0 or _Y > Map.Y - 1 or Map.MAP_TABLE[_X,_Y] == 1
 
 ##Classes pour l'orga des données
 @dataclass
