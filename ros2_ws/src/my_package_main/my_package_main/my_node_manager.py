@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from typing import Dict
 from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
-from .robot_state import RobotState
-from .map import obstacle
+
+from .enum.robot_state import RobotState
+from .enum.map import obstacle
 
 
 
