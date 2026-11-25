@@ -13,6 +13,8 @@ from .pose import Pose
 
 ROBOT_RADIUS = 91 # mm (noté r)
 ROBOT_MAX_SPEED = 10 # mm/s (vitesse max robot holonome)
+TASK_DONE_TIMEOUT = 5 # s Temps max avant le passage en waiting après un tache terminé
+LOOP_PERIOD = 0.1 # s Période de la boule principal loop
 
 
 class RobotNode(Node):
@@ -36,6 +38,10 @@ class RobotNode(Node):
         self.packet_pickup_pos = (0, 0)
         self.packet_dropoff_pos = (0, 0)
 
+        self.waypoints = []
+
+        self.task_done_timeout = 0
+
         # -- Init sub et pub --
 
         # Subscriber task
@@ -48,8 +54,7 @@ class RobotNode(Node):
         self.state_pub = self.create_publisher(Int8MultiArray, "/robot_state", 10)
         
         # -- Main loop --
-        loop_timer_period = 0.1  # secondes
-        self.timer = self.create_timer(loop_timer_period, self.loop)
+        self.timer = self.create_timer(LOOP_PERIOD, self.loop)
         
         self.get_logger().info("Lancement du noeud pour le robot "+self.name+".")
 
@@ -123,8 +128,42 @@ class RobotNode(Node):
         Logique principale
         """
 
-        # TODO
-        pass
+        if self.state == RobotState.SEARCHING_PACKET:
+            if self.__is_at_pos(self.packet_pickup_pos):
+                # Robot pas encore à la position de récupération, déplacement
+
+                if len(self.waypoints) == 0:
+                    # Pas de trajéctoire généré, génération
+                    self.__generate_waypoints_to(self.packet_pickup_pos)
+                # Déplacement
+                self.__follow_waypoints()
+
+            else:
+                # Robot à la position de récupération, déplacement du packet
+                self.set_state(RobotState.TRANSPORTING)
+
+
+        elif self.state == RobotState.TRANSPORTING:
+            if self.__is_at_pos(self.packet_dropoff_pos):
+                # Robot pas encore à la position de livraison, déplacement
+
+                if len(self.waypoints) == 0:
+                    # Pas de trajéctoire généré, génération
+                    self.__generate_waypoints_to(self.packet_dropoff_pos)
+                # Déplacement
+                self.__follow_waypoints()
+
+            else:
+                # Robot à la position de livraison, validation de la tache
+                self.set_state(RobotState.TASK_DONE)
+                self.task_done_timeout = TASK_DONE_TIMEOUT
+
+        elif self.state == RobotState.TASK_DONE:
+            self.task_done_timeout -= LOOP_PERIOD
+
+            # Si timeout, passage en waiting
+            if self.task_done_timeout <= 0:
+                self.set_state(RobotState.WAITING)
 
     def set_state(self, state):
         """
@@ -144,6 +183,78 @@ class RobotNode(Node):
         msg.data = [self.robot_id, self.state]
         self.state_pub.publish(msg)
 
+    def __is_at_pos(self, pos)->bool:
+        """
+        Test si le robot est arrivé à une position donnée.
+        Pre :
+            Couple des coordonnées de la position sur la carte.
+        Post :
+            Un booléen vrai si le robot est à la position donnée.
+        """
+        # Utilisation des coordonnées du robot holonome
+        dist = np.sqrt((self.pose.X - pos[0])**2 + (self.pose.Y - pos[1])**2)
+        return dist < ROBOT_RADIUS
+
+    def __generate_waypoints_to(self, pos):
+        """
+        Calcul les points de passages pour aller à une position donnée.
+        Pre:
+            Couple des coordonnées de la position sur la carte.
+        """
+        robot_pos = (self.pose.X, self.pose.Y)
+        if self.theta_star.has_line_of_sight(robot_pos, pos):
+            self.waypoints = [pos]
+        else:
+            self.waypoints = self.theta_star.compute_waypoints(robot_pos, pos)
+
+    def __follow_waypoints(self):
+        """
+        Déplace le robot avec ORCA pour suivre les points de passages.
+        """
+        # Retour si aucun trajet planifié
+        if len(self.waypoints) == 0:
+            return
+
+        if self.__is_at_pos(self.waypoints[0]):
+            # Suppression point de passage courant si on y est
+            self.waypoints.pop()
+
+            # Retour si point final atteint
+            if len(self.waypoints) == 0:
+                return
+
+        robot_pos = (self.pose.X, self.pose.Y)
+
+        # Regénération points de passages si point de passage suivant invisible
+        if not self.theta_star.has_line_of_sight(robot_pos, self.waypoints[0]):
+            self.__generate_waypoints_to(self.waypoints[-1])
+
+        # Récupération de la vitesse qui nous mène au point
+        speed_pref = self.__get_pref_speed(self.waypoints[0])
+
+        # ORCA
+        speed = self.orca.compute_optimal_velocity(speed_pref)
+
+        # Actionnement des moteurs
+        # TODO, appliquer la vitesse au moteurs
+
+    def __get_pref_speed(self, pos)->tuple:
+        """
+        Calcul la vitesse préféré pour aller vers un point donnée.
+        Pre:
+            Couple des coordonnées de la position sur la carte.
+        Post:
+            Couple des coordonnées de la vitesse calculé.
+        """
+        robot_pos = (self.pose.X, self.pose.Y)
+        speed_pref = (pos[0]-robot_pos[0], pos[1]-robot_pos[1])
+
+        # TODO, gestion de l'amplitude
+        # Ici vitesse max tout le temps
+        norm = np.sqrt(speed_pref[0]**2 + speed_pref[1]**2)
+        speed_pref = (speed_pref[0]*ROBOT_MAX_SPEED/norm, speed_pref[1]*ROBOT_MAX_SPEED/norm)
+
+        return speed_pref
 
 def main(args=None):
     robot_id = int(sys.argv[1]) if len(sys.argv) > 1 else "None"
