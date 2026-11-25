@@ -129,8 +129,6 @@ class ORCA:
         """
         Affiche les obstacles et les robots présents dans le simulateur.
         """
-
-
         simulator = self.simulator
         if simulator is None:
             raise RuntimeError("Le simulateur ORCA n'est pas initialisé.")
@@ -157,6 +155,7 @@ class ORCA:
 
         for agent_id in range(simulator.getNumAgents()):
             position = simulator.getAgentPosition(agent_id)
+            velocity = simulator.getAgentVelocity(agent_id)
             radius = simulator.getAgentRadius(agent_id)
             ax.add_patch(Circle(
                 (position.x_, position.y_),
@@ -166,6 +165,15 @@ class ORCA:
                 label="Robot" if agent_id == 0 else None,
             ))
             ax.plot(position.x_, position.y_, ".", color="black", markersize=3)
+            ax.quiver(
+                position.x_, position.y_, velocity.x_, velocity.y_,
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="tab:red",
+                width=0.004,
+                label="Vitesse" if agent_id == 0 else None,
+            )
             bounds_x.extend((position.x_ - radius, position.x_ + radius))
             bounds_y.extend((position.y_ - radius, position.y_ + radius))
 
@@ -179,7 +187,7 @@ class ORCA:
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title(f"État du simulateur ORCA (t={simulator.getGlobalTime():.2f} s)")
-        if simulator.obstacles_ or simulator.getNumAgents():
-            ax.legend()
+        # if simulator.obstacles_ or simulator.getNumAgents():
+        #     ax.legend()
         ax.grid(True, alpha=0.3)
         plt.show()
