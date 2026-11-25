@@ -16,8 +16,11 @@ TARGET_FPS = 30         # Cadence cible (en VM, 10-15 Hz est plus sûr si satura
 MAX_DT = 0.5            # Au-delà de 0.5 s d'absence, réinitialise l'historique de vitesse
 DETECT_SCALE = 0.5      # Facteur de réduction pour detectMarkers (1.0 = pleine résolution)
 VELOCITY_ALPHA = 0.35   # Lissage des vitesses (0.0 = figé, 1.0 = brut sans filtre)
+POS_ALPHA = 0.4         # Lissage des positions (0.0 = figé, 1.0 = bruit sans filtre)
 SHOW_WINDOW = True      # Mettre à False si cv2.imshow fait ramer ou geler la VM
 WINDOW_NAME = "Camera - Suivi ArUco"
+WHEEL_OFFSET_X = 0.00
+WHEEL_OFFSET_Y = 0.00
 
 CAMERA_MATRIX = np.array([
     [2.28765453e+03, 0.00000000, 1.90488413e+03],
@@ -30,7 +33,7 @@ DIST_COEFFS = np.array(
     dtype=np.float32
 )
 
-MARKER_SIZE = 0.102     # Taille réelle des marqueurs en mètres (10.2 cm)
+MARKER_SIZE = 102.0     # Taille réelle des marqueurs en mètres (10.2 cm)
 REFERENCE_ID = 0        # ID de l'ArUco fixe servant d'origine et de plan au plateau
 
 # Association explicite : {id_aruco: numero_robot}
@@ -157,6 +160,18 @@ class CameraNode(Node):
 
         return corners, ids
 
+    def _project_to_pixel(self, pt_3d_cam: np.ndarray):
+        """Projette un point 3D (repère caméra) vers des coordonnées pixels (u, v) entières."""
+        pts_2d, _ = cv2.projectPoints(
+            pt_3d_cam.reshape(1, 1, 3).astype(np.float32),
+            np.zeros((3, 1), dtype=np.float32),
+            np.zeros((3, 1), dtype=np.float32),
+            CAMERA_MATRIX,
+            DIST_COEFFS
+        )
+        u, v = pts_2d.reshape(2)
+        return int(round(u)), int(round(v))
+
     def timer_callback(self):
         if self._processing or self.cap is None or not self.cap.isOpened():
             return
@@ -228,22 +243,40 @@ class CameraNode(Node):
 
                 robot_num = ROBOT_MAPPING[marker_id]
 
+                cv2.drawFrameAxes(
+                    frame, CAMERA_MATRIX, DIST_COEFFS, data['rvec'], data['tvec'], MARKER_SIZE * 0.5
+                )
+
                 # Position 3D exprimée dans le repère de l'ArUco de référence (en mètres)
                 pos_rel = R_ref_T @ (data['tvec'] - t_ref)
-                x_rel = float(pos_rel[0, 0])
-                y_rel = float(pos_rel[1, 0])
+                x_aruco = float(pos_rel[0, 0])
+                y_aruco = float(pos_rel[1, 0])
 
                 # Orientation relative 3D du robot autour de la normale Z du plateau
                 R_rob, _ = cv2.Rodrigues(data['rvec'])
                 R_rel = R_ref_T @ R_rob
                 theta_rel = float(np.arctan2(R_rel[1, 0], R_rel[0, 0]))
 
+                # Application de l'offset dans le repère du robot pour obtenir l'entre-axe des roues
+                cos_th = np.cos(theta_rel)
+                sin_th = np.sin(theta_rel)
+                raw_x = float(x_aruco + WHEEL_OFFSET_X * cos_th - WHEEL_OFFSET_Y * sin_th)
+                raw_y = float(y_aruco + WHEEL_OFFSET_X * sin_th + WHEEL_OFFSET_Y * cos_th)
+
+                # Filtrage passe-bas sur (x,y) puis calcul des vitesses filtrées
+                x_rel, y_rel = raw_x, raw_y
+
                 # Calcul des vitesses linéaires et angulaire avec lissage exponentiel (EMA)
                 v_x, v_y, omega = 0.0, 0.0, 0.0
+
                 if robot_num in self.history:
                     prev = self.history[robot_num]
                     dt = current_time - prev['time']
                     if 0.0 < dt <= MAX_DT:
+                        
+                        x_rel = float(POS_ALPHA * raw_x + (1.0 - POS_ALPHA) * prev['x'])
+                        y_rel = float(POS_ALPHA * raw_y + (1.0 - POS_ALPHA) * prev['y'])
+
                         raw_vx = (x_rel - prev['x']) / dt
                         raw_vy = (y_rel - prev['y']) / dt
                         d_theta = np.arctan2(
@@ -279,12 +312,31 @@ class CameraNode(Node):
                 ]
                 self.publisher_.publish(msg)
 
-                # Affichage de debug sur l'image
-                cx, cy = data['corner'].reshape(4, 2).mean(axis=0).astype(int)
+                # Point 3D de l'entre-axe dans le repère de l'ArUco robot, converti en repère caméra
+                offset_local_3d = np.array([[WHEEL_OFFSET_X], [WHEEL_OFFSET_Y], [0.0]], dtype=np.float32)
+                t_wheel_cam = data['tvec'] + R_rob @ offset_local_3d
+
+                # Point devant l'entre-axe (5 cm selon X local) pour tracer la flèche d'orientation
+                heading_local_3d = np.array([[WHEEL_OFFSET_X + 50.0], [WHEEL_OFFSET_Y], [0.0]], dtype=np.float32)
+                t_heading_cam = data['tvec'] + R_rob @ heading_local_3d
+
+                px_aruco = self._project_to_pixel(data['tvec'])
+                px_wheel = self._project_to_pixel(t_wheel_cam)
+                px_heading = self._project_to_pixel(t_heading_cam)
+
+                # Trait reliant le centre de l'ArUco à l'entre-axe des roues
+                cv2.line(frame, px_aruco, px_wheel, (255, 200, 0), 2)
+                # Point bleu = centre de l'ArUco
+                cv2.circle(frame, px_aruco, 5, (255, 0, 0), -1)
+                # Cercle magenta + flèche cyan = position réelle et cap du robot (entre-axe)
+                cv2.circle(frame, px_wheel, 7, (255, 0, 255), -1)
+                cv2.circle(frame, px_wheel, 9, (255, 255, 255), 1)
+                cv2.arrowedLine(frame, px_wheel, px_heading, (255, 255, 0), 2, tipLength=0.35)
+
                 cv2.putText(
                     frame,
-                    f"R{robot_num} (ID{marker_id}): x={x_rel:.2f}m y={y_rel:.2f}m th={np.degrees(theta_rel):.0f}deg",
-                    (cx, cy - 10),
+                    f"R{robot_num}: x={x_rel:.1f}mm y={y_rel:.1f}mm th={theta_rel:.2f}rad",
+                    (px_wheel[0] + 12, px_wheel[1] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (0, 255, 0),
