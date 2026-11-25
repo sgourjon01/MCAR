@@ -11,7 +11,7 @@ pip install python-motion-planning
 https://ai-winter.github.io/python_motion_planning/latest/index.html
 """
 
-from python_motion_planning.common import Grid, TYPES
+from python_motion_planning.common import Grid, TYPES, Visualizer2D
 from python_motion_planning.path_planner import ThetaStar as TS
 
 from .map import Map
@@ -121,3 +121,11 @@ class ThetaStar:
                 y0 += sy
 
         return True
+
+    def show_debug_map(self, path=None):
+        vis = Visualizer2D()
+        vis.plot_grid_map(self.grid)
+        if path:
+            vis.plot_path(path, style="--", color="C4")
+        vis.show()
+        vis.close()
