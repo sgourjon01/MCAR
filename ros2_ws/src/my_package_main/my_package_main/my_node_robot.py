@@ -4,6 +4,7 @@ from std_msgs.msg import Int8MultiArray, Float32MultiArray
 import sys
 import numpy as np
 
+from .task_type import TaskType
 from .robot_state import RobotState
 from .theta_star import ThetaStar
 from .orca import ORCA
@@ -29,9 +30,11 @@ class RobotNode(Node):
         self.theta_star = ThetaStar()
         self.orca = ORCA(self.robot_id, ROBOT_RADIUS, ROBOT_MAX_SPEED)
 
-        self.__state = RobotState.WAITING
-
+        self.state = RobotState.WAITING
         self.pose = Pose(ROBOT_RADIUS)
+
+        self.packet_pickup_pos = (0, 0)
+        self.packet_dropoff_pos = (0, 0)
 
         # -- Init sub et pub --
 
@@ -56,11 +59,35 @@ class RobotNode(Node):
         Traitement des ordes du Manager.
         """
 
-        if len(msg.data) <= 0:
-            # Message vide
+        if len(msg.data) < 2:
+            # Message incomplet
             return
-        
-        # TODO
+
+        robot_id = msg.data[0]
+        task = msg.data[1]
+
+        # Vérification ordre pour nous
+        if robot_id != self.robot_id:
+            return
+
+        # MOVE_PACKET
+        if task == TaskType.MOVE_PACKET:
+            # Si on est en attente, on accepte l'ordre
+            if self.state == RobotState.WAITING:
+                self.packet_pickup_pos = (msg.data[2], msg.data[3])
+                self.packet_dropoff_pos = (msg.data[4], msg.data[5])
+
+                self.set_state(RobotState.SEARCHING_PACKET)
+
+            # Ordre déjà en cours
+            else:
+                self.get_logger().info("Un ordre a été reçu alors qu'une tâche est déjà en cours. Ordre ignoré.")
+
+        # ACKNOWLEDGE
+        if task == TaskType.ACK:
+            # Si on à finit une tache, passer en waiting
+            if self.state == RobotState.TASK_DONE:
+                self.set_state(RobotState.WAITING)
 
     def listener_pose(self, msg):
         """
@@ -89,7 +116,7 @@ class RobotNode(Node):
 
         # Mise à jour robots sur ORCA
         self.orca.update_agent(robot_id, (pose.X, pose.Y), (pose.X_dot, pose.Y_dot))
-    
+
     def loop(self):
         """
         Main loop
@@ -98,7 +125,25 @@ class RobotNode(Node):
 
         # TODO
         pass
-    
+
+    def set_state(self, state):
+        """
+        Change l'état du robot.
+        """
+        # Changement de l'état
+        self.state = state
+
+        # Notification du changement sur le topic robot_state
+        self.__notify_state_change()
+
+    def __notify_state_change(self):
+        """
+        Publie sur le topic robot_state le changement d'etat.
+        """
+        msg = Int8MultiArray()
+        msg.data = [self.robot_id, self.state]
+        self.state_pub.publish(msg)
+
 
 def main(args=None):
     robot_id = int(sys.argv[1]) if len(sys.argv) > 1 else "None"
