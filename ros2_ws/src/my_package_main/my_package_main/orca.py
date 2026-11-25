@@ -62,14 +62,14 @@ class ORCA:
         """
         obstacles = []
 
-        for row in range(Map.X):
-            for column in range(Map.Y):
+        for x in range(Map.X):
+            for y in range(Map.Y):
                 # On ne traite que les obstacles
-                if Map.MAP_TABLE[row, column] != 1:
+                if Map.MAP_TABLE[x, y] != 1:
                     continue
 
-                x0 = column * Map.SIZE
-                y0 = (Map.X - 1 - row) * Map.SIZE
+                x0 = x * Map.SIZE
+                y0 = y * Map.SIZE
                 # Sommets dans le sens anti-horaire, en mm
                 square = [
                     Vector2(x0, y0),
