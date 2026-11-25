@@ -14,10 +14,11 @@ Ces conventions sont essentielles pour garantir la cohérence et le bon fonction
 
 Toutes les grandeurs physiques doivent être stockées et transmises entre les nœuds en utilisant les unités suivantes :
 
-- **Longueur :** mm (millimètres)
-- **Temps :** s (secondes)
+- **Longueur :** millimètres
+- **Angles :** radians
+- **Temps :** secondes
 
-Par conséquent, les vitesses sont exprimées en **mm/s**.
+Par conséquent, les vitesses sont exprimées en **mm/s** et **rad/s**.
 
 ## Repère
 
