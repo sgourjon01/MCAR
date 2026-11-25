@@ -243,7 +243,7 @@ class RobotNode(Node):
 
         if self.__is_at_pos(self.waypoints[0]):
             # Suppression point de passage courant si on y est
-            self.waypoints.pop()
+            self.waypoints.pop(0)
 
             # Retour si point final atteint
             if len(self.waypoints) == 0:
