@@ -6,6 +6,7 @@ import numpy as np
 
 from .task_type import TaskType
 from .robot_state import RobotState
+from .map import Map
 from .theta_star import ThetaStar
 from .orca import ORCA
 from .pose import Pose
@@ -15,6 +16,18 @@ ROBOT_RADIUS = 91 # mm (noté r)
 ROBOT_MAX_SPEED = 10 # mm/s (vitesse max robot holonome)
 TASK_DONE_TIMEOUT = 5 # s Temps max avant le passage en waiting après un tache terminé
 LOOP_PERIOD = 0.1 # s Période de la boule principal loop
+
+
+def pos_to_cell(pos: tuple)->tuple:
+    """
+    Renvoi l'indice de la cellule de la carte corespondant
+    à la position donnée.
+    Pre:
+        Couple des coordonnées de la position sur la carte.
+    Post:
+        Couple des indices de la cellule.
+    """
+    return int(pos[0]/Map.SIZE), int(pos[1]/Map.SIZE)
 
 
 class RobotNode(Node):
@@ -202,10 +215,10 @@ class RobotNode(Node):
             Couple des coordonnées de la position sur la carte.
         """
         robot_pos = (self.pose.X, self.pose.Y)
-        if self.theta_star.has_line_of_sight(robot_pos, pos):
+        if self.theta_star.has_line_of_sight(pos_to_cell(robot_pos), pos_to_cell(pos)):
             self.waypoints = [pos]
         else:
-            self.waypoints = self.theta_star.compute_waypoints(robot_pos, pos)
+            self.waypoints = self.theta_star.compute_waypoints(pos_to_cell(robot_pos), pos_to_cell(pos))
 
     def __follow_waypoints(self):
         """
@@ -226,8 +239,8 @@ class RobotNode(Node):
         robot_pos = (self.pose.X, self.pose.Y)
 
         # Regénération points de passages si point de passage suivant invisible
-        if not self.theta_star.has_line_of_sight(robot_pos, self.waypoints[0]):
-            self.__generate_waypoints_to(self.waypoints[-1])
+        if not self.theta_star.has_line_of_sight(pos_to_cell(robot_pos), pos_to_cell(self.waypoints[0])):
+            self.__generate_waypoints_to(pos_to_cell(self.waypoints[-1]))
 
         # Récupération de la vitesse qui nous mène au point
         speed_pref = self.__get_pref_speed(self.waypoints[0])
