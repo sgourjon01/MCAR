@@ -29,6 +29,16 @@ def pos_to_cell(pos: tuple)->tuple:
     """
     return int(pos[0]/Map.SIZE), int(pos[1]/Map.SIZE)
 
+def cell_to_pos(cell: tuple)->tuple:
+    """
+    Renvoi la position sur la carte de la cellule donnée.
+    Pre:
+        Couple des indices de la cellule.
+    Post:
+        Couple des coordonnées de la position sur la carte.
+    """
+    return (cell[0]+0.5)*Map.SIZE, (cell[1]+0.5)*Map.SIZE
+
 
 class RobotNode(Node):
     """
@@ -218,7 +228,10 @@ class RobotNode(Node):
         if self.theta_star.has_line_of_sight(pos_to_cell(robot_pos), pos_to_cell(pos)):
             self.waypoints = [pos]
         else:
-            self.waypoints = self.theta_star.compute_waypoints(pos_to_cell(robot_pos), pos_to_cell(pos))
+            waypoints = self.theta_star.compute_waypoints(pos_to_cell(robot_pos), pos_to_cell(pos))
+            for i in range(len(waypoints)):
+                waypoints[i] = cell_to_pos(waypoints[i])
+            self.waypoints = waypoints
 
     def __follow_waypoints(self):
         """
