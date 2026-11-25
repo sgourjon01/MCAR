@@ -37,7 +37,7 @@ class ThetaStar:
         # Remplissage à partir des données de Map
         for y in range(Map.Y):
             for x in range(Map.X):
-                if Map.MAP_TABLE[y, x] == 1:
+                if Map.MAP_TABLE[x, y] == 1:
                     self.grid[x, y] = TYPES.OBSTACLE
                 # else:
                 #     self.grid[x, y] = TYPES.FREE
