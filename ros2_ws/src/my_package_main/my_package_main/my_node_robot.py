@@ -7,6 +7,10 @@ import numpy as np
 from .robot_state import RobotState
 from .theta_star import ThetaStar
 from .orca import ORCA
+from .pose import Pose
+
+
+ROBOT_RADIUS = 91 * 1e-3 # 91 mm (r)
 
 
 class RobotNode(Node):
@@ -18,9 +22,6 @@ class RobotNode(Node):
         super().__init__("Robot_"+str(robot_id))
         self.robot_id = robot_id
         self.name = "Robot_"+str(robot_id)
-        
-        # -- Constantes du robot --
-        self.r = 91 * 1e-3 # 91 mm
 
         # -- Variables du robot --
 
@@ -29,10 +30,7 @@ class RobotNode(Node):
 
         self.__state = RobotState.WAITING
 
-        self.__pos_l = np.zeros(2)
-        self.__pos_a = 0.0
-        self.__vel_l = np.zeros(2)
-        self.__vel_a = 0.0
+        self.pose = Pose(ROBOT_RADIUS)
 
         # -- Init sub et pub --
 
@@ -75,14 +73,18 @@ class RobotNode(Node):
 
         id = msg.data[0]
 
+        pose = Pose(ROBOT_RADIUS)
+        pose.set_real(
+            msg.data[1],  # x
+            msg.data[2],  # y
+            msg.data[3],  # theta
+            np.sqrt(msg.data[4] ** 2 + msg.data[5] ** 2),  # V
+            msg.data[6]  # theta_dot
+        )
+
         if id == self.robot_id:
-            # Mise a jour pose si c'est la pose du robot
-            self.__pos_l[0] = msg.data[1]
-            self.__pos_l[1] = msg.data[2]
-            self.__pos_a = msg.data[3]
-            self.__vel_l[0] = msg.data[4]
-            self.__vel_l[1] = msg.data[5]
-            self.__vel_a = msg.data[6]
+            # Mise à jour pose si c'est la pose du robot
+            self.pose.set(pose)
 
         # TODO mise à jour pour ORCA
     
