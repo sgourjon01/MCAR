@@ -115,6 +115,10 @@ class ORCA:
         Post :
             un couple de flottants représentant la vitesse optimale.
         """
+        # Position du robot inconnue
+        if self.master_id not in self.agents.keys():
+            return 0, 0
+
         self.simulator.setAgentPrefVelocity(self.agents[self.master_id], Vector2(*speed_pref))
 
         # Pas de simulation
