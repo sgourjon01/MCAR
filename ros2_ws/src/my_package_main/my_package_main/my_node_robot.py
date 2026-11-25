@@ -129,7 +129,7 @@ class RobotNode(Node):
         """
 
         if self.state == RobotState.SEARCHING_PACKET:
-            if self.__is_at_pos(self.packet_pickup_pos):
+            if not self.__is_at_pos(self.packet_pickup_pos):
                 # Robot pas encore à la position de récupération, déplacement
 
                 if len(self.waypoints) == 0:
@@ -144,7 +144,7 @@ class RobotNode(Node):
 
 
         elif self.state == RobotState.TRANSPORTING:
-            if self.__is_at_pos(self.packet_dropoff_pos):
+            if not self.__is_at_pos(self.packet_dropoff_pos):
                 # Robot pas encore à la position de livraison, déplacement
 
                 if len(self.waypoints) == 0:
