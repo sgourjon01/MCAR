@@ -33,7 +33,7 @@ DIST_COEFFS = np.array(
     dtype=np.float32
 )
 
-MARKER_SIZE = 102.0     # Taille réelle des marqueurs en mètres (10.2 cm)
+MARKER_SIZE = 93.0     # Taille réelle des marqueurs en mètres (10.2 cm)
 REFERENCE_ID = 0        # ID de l'ArUco fixe servant d'origine et de plan au plateau
 
 # Association explicite : {id_aruco: numero_robot}
