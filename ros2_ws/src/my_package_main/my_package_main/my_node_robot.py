@@ -72,7 +72,7 @@ class RobotNode(Node):
             # Message non conforme
             return
 
-        id = msg.data[0]
+        robot_id = msg.data[0]
 
         pose = Pose(ROBOT_RADIUS)
         pose.set_real(
@@ -83,11 +83,12 @@ class RobotNode(Node):
             msg.data[6]  # theta_dot
         )
 
-        if id == self.robot_id:
+        if robot_id == self.robot_id:
             # Mise à jour pose si c'est la pose du robot
             self.pose.set(pose)
 
-        # TODO mise à jour pour ORCA
+        # Mise à jour robots sur ORCA
+        self.orca.update_agent(robot_id, (pose.X, pose.Y), (pose.X_dot, pose.Y_dot))
     
     def loop(self):
         """
