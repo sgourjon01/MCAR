@@ -30,11 +30,13 @@ class ORCA:
     Classe qui implémente l'algorithme ORCA.
     """
 
-    def __init__(self, robot_id: int):
+    def __init__(self, robot_id: int, robot_radius: float, robot_max_speed: float):
         self.simulator = None
         self.agents = {} # {robot_id : agent_index}
 
         self.master_id = robot_id
+        self.robot_radius = robot_radius
+        self.robot_max_speed = robot_max_speed
 
         self.init_simulator()
 
@@ -47,9 +49,9 @@ class ORCA:
             neighborDist=NEIGHBOR_DIST,
             maxNeighbors=MAX_NEIGHBORS,
             timeHorizon=TIMER_HORIZON,
-            timeHorizonObst=TIMER_HORIZON_OBST
-            # radius=None, # TODO
-            # maxSpeed=None # TODO
+            timeHorizonObst=TIMER_HORIZON_OBST,
+            radius=self.robot_radius,
+            maxSpeed=self.robot_max_speed
         )
 
         self.__create_obstacle()

@@ -10,7 +10,8 @@ from .orca import ORCA
 from .pose import Pose
 
 
-ROBOT_RADIUS = 91 * 1e-3 # 91 mm (r)
+ROBOT_RADIUS = 91 # mm (noté r)
+ROBOT_MAX_SPEED = 10 # mm/s (vitesse max robot holonome)
 
 
 class RobotNode(Node):
@@ -26,7 +27,7 @@ class RobotNode(Node):
         # -- Variables du robot --
 
         self.theta_star = ThetaStar()
-        self.orca = ORCA(self.robot_id)
+        self.orca = ORCA(self.robot_id, ROBOT_RADIUS, ROBOT_MAX_SPEED)
 
         self.__state = RobotState.WAITING
 
