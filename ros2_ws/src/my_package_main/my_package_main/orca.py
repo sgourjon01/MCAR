@@ -7,6 +7,9 @@ Classe qui implémente l'algorithme ORCA pour calculer
 les mouvements des robots sans collisions.
 """
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+
 from .rvo2_python import RVOSimulator, Vector2
 
 from .map import Map
@@ -121,3 +124,62 @@ class ORCA:
         speed_opt = self.simulator.getAgentVelocity(self.agents[self.master_id])
 
         return speed_opt.x_, speed_opt.y_
+
+    def show_debug_map(self):
+        """
+        Affiche les obstacles et les robots présents dans le simulateur.
+        """
+
+
+        simulator = self.simulator
+        if simulator is None:
+            raise RuntimeError("Le simulateur ORCA n'est pas initialisé.")
+
+        fig, ax = plt.subplots()
+        bounds_x = []
+        bounds_y = []
+
+        # Les obstacles sont stockés par sommets, chaque sommet pointant vers
+        # le suivant dans son polygone.
+        for vertex_id in range(len(simulator.obstacles_)):
+            vertex = simulator.getObstacleVertex(vertex_id)
+            next_id = simulator.getNextObstacleVertexNo(vertex_id)
+            next_vertex = simulator.getObstacleVertex(next_id)
+            ax.plot(
+                [vertex.x_, next_vertex.x_],
+                [vertex.y_, next_vertex.y_],
+                color="dimgray",
+                linewidth=2,
+                label="Obstacle" if vertex_id == 0 else None,
+            )
+            bounds_x.append(vertex.x_)
+            bounds_y.append(vertex.y_)
+
+        for agent_id in range(simulator.getNumAgents()):
+            position = simulator.getAgentPosition(agent_id)
+            radius = simulator.getAgentRadius(agent_id)
+            ax.add_patch(Circle(
+                (position.x_, position.y_),
+                radius,
+                color="tab:blue",
+                alpha=0.65,
+                label="Robot" if agent_id == 0 else None,
+            ))
+            ax.plot(position.x_, position.y_, ".", color="black", markersize=3)
+            bounds_x.extend((position.x_ - radius, position.x_ + radius))
+            bounds_y.extend((position.y_ - radius, position.y_ + radius))
+
+        if bounds_x and bounds_y:
+            margin = max(max(bounds_x) - min(bounds_x), max(bounds_y) - min(bounds_y)) * 0.05
+            margin = max(margin, 1.0)
+            ax.set_xlim(min(bounds_x) - margin, max(bounds_x) + margin)
+            ax.set_ylim(min(bounds_y) - margin, max(bounds_y) + margin)
+
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_title(f"État du simulateur ORCA (t={simulator.getGlobalTime():.2f} s)")
+        if simulator.obstacles_ or simulator.getNumAgents():
+            ax.legend()
+        ax.grid(True, alpha=0.3)
+        plt.show()
