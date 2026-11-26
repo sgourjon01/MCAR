@@ -9,6 +9,7 @@ from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
 from .robot_state import RobotState
 from .map import obstacle
+from .task_type import TaskType
 
 
 
@@ -142,6 +143,7 @@ class ManagerNode(Node):
                 
                 if state_rob == RobotState.TASK_DONE:
                     self.tasks[self.robots[id_rob].task].state = Task.DONE
+                    self.publish_ack(id_rob)
                 elif state_rob == RobotState.WAITING:
                     next_pending = next((task for task in self.tasks.values() if task.state == Task.PENDING),None,)
                     if next_pending != None:
@@ -180,6 +182,7 @@ class ManagerNode(Node):
             msg = Float32MultiArray()
             msg.data = [
                 float(task.id),
+                float(TaskType.MOVE_PACKET),
                 float(task.pickup_x),
                 float(task.pickup_y),
                 float(task.delivery_x),
@@ -190,6 +193,19 @@ class ManagerNode(Node):
             self.get_logger().debug(f'Task published for robot {task.id}')
         except Exception as e:
             self.get_logger().error(f'Error publishing task: {e}')
+
+    def publish_ack(self, id:int):
+        try:
+            msg = Float32MultiArray()
+            msg.data = [
+                float(id),
+                float(TaskType.ACK)
+            ]
+            
+            self.task_pub.publish(msg)
+            self.get_logger().debug(f'Ack for robot {id}')
+        except Exception as e:
+            self.get_logger().error(f'Error publishing ack: {e}')
 
 def run_ros(manager_node: ManagerNode):
     """Exécute ROS2 dans un thread séparé"""
