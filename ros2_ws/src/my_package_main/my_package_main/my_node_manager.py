@@ -8,7 +8,7 @@ from typing import Dict
 from queue import Queue
 from std_msgs.msg import Float32MultiArray, Int32MultiArray
 from math import floor
-from .task_type import TaskType
+from .enum.task_type import TaskType
 
 from .enum import RobotState
 from .enum import Map
@@ -48,7 +48,7 @@ class Task:
     IN_TRANSPORT = 2
     DONE = 3
 
-    STR_STATE = ["Pending","Assigned","In progress","Done"]
+    STR = ["Pending","Assigned","In progress","Done"]
 
 
 ##Classe MyManagerNode
