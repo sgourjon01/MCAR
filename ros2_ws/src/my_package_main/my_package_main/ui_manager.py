@@ -66,7 +66,7 @@ class ManagerUI:
         self.rbt_lbls = {}
 
         for i in range(1,5):
-            z1 = tk.Label(self.robots_grid, text="id", justify="left")
+            z1 = tk.Label(self.robots_grid, text="id", justify="left", font=("Arial", 12, "bold"))
             z1.grid(row=i, column=0, padx=10)
             z2 = tk.Label(self.robots_grid, text="state", justify="left")
             z2.grid(row=i, column=1, padx=10)
@@ -128,13 +128,13 @@ class ManagerUI:
         pckp = [-1,-1]
         delv = [-1,-1]
         def set_task_info_text():
-            p1 = "Pickup (shift+mouse):"
-            p2 = "Delivery (alt+mouse):"
+            p1 = "Pickup (shift + mouse to adjust)"
+            p2 = "Delivery (alt + mouse to adjust)"
             if pckp[0] > 0:
                 p1 = f"Pickup (shift+mouse): {pckp[0]} ; {pckp[1]}"
             if delv[0] > 0:
                 p2 = f"Delivery (alt+mouse): {delv[0]} ; {delv[1]}"
-            task_info.config(text="Create a task (mouse click ou alt/shift + drag) :\n" + p1 + "\n" + p2)
+            task_info.config(text="Create a task (click & drag on the map) :\n" + p1 + "\n" + p2)
         set_task_info_text()
         #
         def submit_task():
@@ -179,7 +179,7 @@ class ManagerUI:
 
         ##Legende
         #"■"
-        tk.Label(map_container, text="\nLégende", font=("Arial", 13, "bold")).pack(anchor="w")
+        tk.Label(map_container, text="\nLegend", font=("Arial", 12, "bold")).pack(anchor="w")
         tk.Label(map_container, text="Robot state (outline) :").pack(anchor="w")
         tk.Label(map_container, text="■ : "+RobotState.STR_STATE[0], fg=STATE_COLORS[0]).pack(anchor="w")
         tk.Label(map_container, text="■ : "+RobotState.STR_STATE[1], fg=STATE_COLORS[1]).pack(anchor="w")
@@ -248,14 +248,12 @@ class ManagerUI:
             self.canvas.itemconfig("c" + str(r.id), outline=STATE_COLORS[r.state])
             self.canvas.itemconfig("l" + str(r.id), fill=STATE_COLORS[r.state])
 
-            self.rbt_lbls[(r.id,0)].config(text=r.id, fg=ROBOT_COLORS[r.id], font=("Arial",10,"bold"))
+            self.rbt_lbls[(r.id,0)].config(text=r.id, fg=ROBOT_COLORS[r.id])
             self.rbt_lbls[(r.id,1)].config(text=RobotState.STR_STATE[r.state], fg=STATE_COLORS[r.state])
-            self.rbt_lbls[(r.id,2)].config(text=r.task)
+            self.rbt_lbls[(r.id,2)].config(text= "/" if r.state==RobotState.WAITING else r.task)
             self.rbt_lbls[(r.id,3)].config(text=f"({round(r.x)} ; {round(r.y)} ) mm\n{round(r.theta,2)} rad")
             self.rbt_lbls[(r.id,4)].config(text=f"({round(r.vx)} ; {round(r.vy)} ) mm/s\n{round(r.omega,2)} rad/s")
 
-            print(f"{r.id} : {all_tasks[r.task].id} ({r.task})")
-        print(all_tasks)
 
     def draw_task(self, task:Task):
         self.canvas.create_line(task.pickup_x * PX_PAR_MM, task.pickup_y * PX_PAR_MM, task.delivery_x * PX_PAR_MM, task.delivery_y * PX_PAR_MM, fill=ROBOT_COLORS[task.robot], tags="task", arrow="last")

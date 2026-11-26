@@ -40,7 +40,7 @@ class Task:
 
     PENDING = 0
     ASSIGNED = 1
-    IN_PROGRESS = 2
+    IN_TRANSPORT = 2
     DONE = 3
 
     STR_STATE = ["Pending","Assigned","In progress","Done"]
@@ -151,7 +151,7 @@ class ManagerNode(Node):
                     if next_pending != None:
                         self.assign_task(next_pending.id)
                 elif state_rob == RobotState.TRANSPORTING:
-                    self.tasks[self.robots[id_rob].task].state = Task.IN_PROGRESS
+                    self.tasks[self.robots[id_rob].task].state = Task.IN_TRANSPORT
                 
                 self.ui_queue.put(('state_update', id_rob))
 
@@ -174,6 +174,7 @@ class ManagerNode(Node):
             if robot.state == RobotState.WAITING:
                 self.tasks[task_id].robot = robot.id
                 self.tasks[task_id].state = Task.ASSIGNED
+                robot.task = task_id
                 robot.state = RobotState.SEARCHING_PACKET #à modifier dans le futur pour update quand recoit topic
                 self.publish_task(self.tasks[task_id])
                 return
