@@ -11,13 +11,27 @@ Ce document décrit les informations relatives à la carte du terrain ainsi que 
 La carte est un élément central du projet. Elle permet de représenter l'environnement dans lequel évoluent les robots, notamment les obstacles et les limites de la zone accessible.
 La carte est définie directement dans le code, au sein de la classe `Map`.
 
-## Classe Map
-
-La classe `Map` centralise les différentes informations relatives à la carte.
-
 <div align="center">
 <img src="Illustration_robot_et_carte.png" width="200"/>
 </div>
+
+
+## Positionnement sur la carte
+
+La carte est un élément discret.  
+Les obstacles sont décrits dans un tableau.  
+Les robots, quant à eux, se déplacent suivant une position continue dans l'espace et le temps.
+
+Il est donc important de garder à l'esprit qu'il faut régulièrement jongler entre les positions discrétisées sur le tableau et les positions réelles dans l'espace.
+
+On désignera alors la position d'une case dans le monde réel par la position de son centre.
+
+Un robot positionné en `(50, 150)` sera alors exactement au centre de la case d'indice `(0, 1)` si les cases ont des côtés de 100 mm.
+De même un robot ayant une position de `(90, 120)` sera également situé dans cette case, sans pour autant être au centre de celle-ci.
+
+## Classe Map
+
+La classe `Map` centralise les différentes informations relatives à la carte.
 
 ### Représentation de la carte
 
