@@ -4,6 +4,9 @@ install
 log
 .vscode
 
+# Fichier de cache python
+__pycache__
+
 #Ou : ignorer tout sauf ce qu'on veut
 #!.gitignore
 #!src/
