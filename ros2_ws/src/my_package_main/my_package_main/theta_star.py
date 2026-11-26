@@ -14,7 +14,7 @@ https://ai-winter.github.io/python_motion_planning/latest/index.html
 from python_motion_planning.common import Grid, TYPES, Visualizer2D
 from python_motion_planning.path_planner import ThetaStar as TS
 
-from .map import Map
+from .enum import Map
 
 
 class ThetaStar:

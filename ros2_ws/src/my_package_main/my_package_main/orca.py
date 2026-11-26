@@ -12,7 +12,7 @@ from matplotlib.patches import Circle
 
 from .rvo2_python import RVOSimulator, Vector2
 
-from .map import Map
+from .enum import Map
 
 
 # Distance max pour être considéré comme robot voisin

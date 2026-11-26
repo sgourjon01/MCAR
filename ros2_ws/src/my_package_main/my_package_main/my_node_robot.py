@@ -4,9 +4,9 @@ from std_msgs.msg import Int8MultiArray, Float32MultiArray
 import sys
 import numpy as np
 
-from .task_type import TaskType
-from .robot_state import RobotState
-from .map import Map
+from .enum import TaskType
+from .enum import RobotState
+from .enum import Map
 from .theta_star import ThetaStar
 from .orca import ORCA
 from .pose import Pose
