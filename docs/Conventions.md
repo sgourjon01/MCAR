@@ -22,6 +22,10 @@ Par conséquent, les vitesses sont exprimées en **mm/s** et **rad/s**.
 
 ## Repère
 
+<div align="center">
+<img src="Illustration_robot_et_carte.png" width="200"/>
+</div>
+
 Toutes les positions utilisées ou représentées dans le repère fixe du sol doivent respecter un système de coordonnées commun à l'ensemble du projet.
 
 Ce repère est défini de la manière suivante :

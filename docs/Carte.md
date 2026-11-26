@@ -15,6 +15,10 @@ La carte est définie directement dans le code, au sein de la classe `Map`.
 
 La classe `Map` centralise les différentes informations relatives à la carte.
 
+<div align="center">
+<img src="Illustration_robot_et_carte.png" width="200"/>
+</div>
+
 ### Représentation de la carte
 
 La carte est représentée par un tableau NumPy à deux dimensions, stocké dans la variable `Map.MAP_TABLE`.
