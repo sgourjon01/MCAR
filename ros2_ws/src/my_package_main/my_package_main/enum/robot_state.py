@@ -16,4 +16,5 @@ class RobotState:
     TRANSPORTING = 3
     TASK_DONE = 4
 
-    STR_STATE = ["None","Waiting","Searching pkg","Transporting pkg","Task done"]
+    STR = ["None","Waiting","Searching pkg","Transporting pkg","Task done"]
+    COLORS = ["white", "red", "gold2", "green", "blue"]
