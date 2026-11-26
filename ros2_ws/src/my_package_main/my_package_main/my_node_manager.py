@@ -145,6 +145,8 @@ class ManagerNode(Node):
                     self.tasks[self.robots[id_rob].task].state = Task.DONE
                     self.publish_ack(id_rob)
                 elif state_rob == RobotState.WAITING:
+                    #if self.auto_tasks:
+                        #create task random
                     next_pending = next((task for task in self.tasks.values() if task.state == Task.PENDING),None,)
                     if next_pending != None:
                         self.assign_task(next_pending.id)
