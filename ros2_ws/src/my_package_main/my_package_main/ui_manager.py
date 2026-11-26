@@ -43,10 +43,8 @@ class ManagerUI:
         mainmenu.add_command(label = "Exit", command= self.root.destroy)
         self.root.config(menu = mainmenu)
 
-        # Titre
+        # Taches
         tk.Label(self.root, text="Tasks", font=("Arial", 16, "bold")).pack(pady=10)
-
-        # Tableau des taches
         columns = ("task_id", "robot_id", "state", "pick_up", "delivery")
         headers = ("Task id", "Robot id", "State", "Pick up", "Delivery")
         self.tree = ttk.Treeview(self.root, columns=columns, show="headings", height=8)
@@ -54,6 +52,36 @@ class ManagerUI:
             self.tree.heading(col, text=text)
             self.tree.column(col, width=130, anchor="center")
         self.tree.pack(fill="x", padx=10)
+
+        # Robots
+        tk.Label(self.root, text="Robots", font=("Arial", 16, "bold")).pack(pady=10)
+        self.robots_grid = tk.Frame(self.root)
+        self.robots_grid.pack(fill="x")
+        tk.Label(self.robots_grid, text="Robot", font=("Arial", 12, "bold")).grid(row=0,column=0,padx=10)
+        tk.Label(self.robots_grid, text="State", font=("Arial", 12, "bold")).grid(row=0,column=1,padx=10)
+        tk.Label(self.robots_grid, text="Task", font=("Arial", 12, "bold")).grid(row=0,column=2,padx=10)
+        tk.Label(self.robots_grid, text="Position", font=("Arial", 12, "bold")).grid(row=0,column=3, padx=10)
+        tk.Label(self.robots_grid, text="Velocity", font=("Arial", 12, "bold")).grid(row=0,column=4,padx=10)
+
+        self.rbt_lbls = {}
+
+        for i in range(1,5):
+            z1 = tk.Label(self.robots_grid, text="id", justify="left")
+            z1.grid(row=i, column=0, padx=10)
+            z2 = tk.Label(self.robots_grid, text="state", justify="left")
+            z2.grid(row=i, column=1, padx=10)
+            z3 = tk.Label(self.robots_grid, text="task", justify="left")
+            z3.grid(row=i, column=2, padx=10)
+            z4 = tk.Label(self.robots_grid, text="position", justify="left")
+            z4.grid(row=i, column=3, padx=10)
+            z5 = tk.Label(self.robots_grid, text="speed", justify="left")
+            z5.grid(row=i, column=4, padx=10)
+
+            self.rbt_lbls[(i,0)] = z1
+            self.rbt_lbls[(i,1)] = z2
+            self.rbt_lbls[(i,2)] = z3
+            self.rbt_lbls[(i,3)] = z4
+            self.rbt_lbls[(i,4)] = z5
 
         # Setup la map des le depart
         self.setup_map_window()
@@ -94,7 +122,7 @@ class ManagerUI:
 
         ##Taches
         tk.Label(map_container, text="\nTasks", font=("Arial", 12, "bold")).pack(anchor="w")
-        task_info = tk.Label(map_container, text=f"Create a task :\nPickup (shift+clic):\nDelivery (alt+clic):", justify="left")
+        task_info = tk.Label(map_container, text=f"Task creation", justify="left")
         task_info.pack(anchor="w")
         #
         pckp = [-1,-1]
@@ -106,7 +134,8 @@ class ManagerUI:
                 p1 = f"Pickup (shift+mouse): {pckp[0]} ; {pckp[1]}"
             if delv[0] > 0:
                 p2 = f"Delivery (alt+mouse): {delv[0]} ; {delv[1]}"
-            task_info.config(text="Create a task :\n" + p1 + "\n" + p2)
+            task_info.config(text="Create a task (mouse click ou alt/shift + drag) :\n" + p1 + "\n" + p2)
+        set_task_info_text()
         #
         def submit_task():
             with self.manager_node.lock:
@@ -150,7 +179,7 @@ class ManagerUI:
 
         ##Legende
         #"■"
-        tk.Label(map_container, text="\nLégende", font=("Arial", 12, "bold")).pack(anchor="w")
+        tk.Label(map_container, text="\nLégende", font=("Arial", 13, "bold")).pack(anchor="w")
         tk.Label(map_container, text="Robot state (outline) :").pack(anchor="w")
         tk.Label(map_container, text="■ : "+RobotState.STR_STATE[0], fg=STATE_COLORS[0]).pack(anchor="w")
         tk.Label(map_container, text="■ : "+RobotState.STR_STATE[1], fg=STATE_COLORS[1]).pack(anchor="w")
@@ -194,6 +223,8 @@ class ManagerUI:
 
         self.canvas.bind("<Shift-Motion>", on_drag_pickup)
         self.canvas.bind("<Alt-Motion>", on_drag_delivery)
+        self.canvas.bind("<Button-1>", on_drag_pickup)
+        self.canvas.bind("<B1-Motion>", on_drag_delivery)
 
         self.update_display()
     
@@ -216,6 +247,15 @@ class ManagerUI:
             self.move_robot(r, r.id)
             self.canvas.itemconfig("c" + str(r.id), outline=STATE_COLORS[r.state])
             self.canvas.itemconfig("l" + str(r.id), fill=STATE_COLORS[r.state])
+
+            self.rbt_lbls[(r.id,0)].config(text=r.id, fg=ROBOT_COLORS[r.id], font=("Arial",10,"bold"))
+            self.rbt_lbls[(r.id,1)].config(text=RobotState.STR_STATE[r.state], fg=STATE_COLORS[r.state])
+            self.rbt_lbls[(r.id,2)].config(text=r.task)
+            self.rbt_lbls[(r.id,3)].config(text=f"({round(r.x)} ; {round(r.y)} ) mm\n{round(r.theta,2)} rad")
+            self.rbt_lbls[(r.id,4)].config(text=f"({round(r.vx)} ; {round(r.vy)} ) mm/s\n{round(r.omega,2)} rad/s")
+
+            print(f"{r.id} : {all_tasks[r.task].id} ({r.task})")
+        print(all_tasks)
 
     def draw_task(self, task:Task):
         self.canvas.create_line(task.pickup_x * PX_PAR_MM, task.pickup_y * PX_PAR_MM, task.delivery_x * PX_PAR_MM, task.delivery_y * PX_PAR_MM, fill=ROBOT_COLORS[task.robot], tags="task", arrow="last")
