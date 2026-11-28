@@ -10,6 +10,17 @@ from .enum import Map
 from .theta_star import ThetaStar
 from .orca import ORCA
 from .pose import Pose
+from .robot_driver import RobotDriver
+
+# Couleur des leds selon l'état du robot
+LED_COLORS = {
+    RobotState.WAITING: (0, 0, 255),
+    RobotState.SEARCHING_PACKET: (255, 165, 0),
+    RobotState.TRANSPORTING: (0, 255, 0),
+    RobotState.TASK_DONE: (255, 255, 255),
+}
+# Led éteinte (couleur RVB)
+LED_OFF = (0, 0, 0)
 
 
 ROBOT_RADIUS = 91 # mm (noté r)
@@ -57,6 +68,9 @@ class RobotNode(Node):
 
         self.state = RobotState.WAITING
         self.pose = Pose(ROBOT_RADIUS)
+        
+        self.driver = RobotDriver(self.robot_id, self.get_logger())
+        self.driver.set_leds(LED_COLORS[self.state])
 
         self.packet_pickup_pos = (0, 0)
         self.packet_dropoff_pos = (0, 0)
@@ -183,6 +197,7 @@ class RobotNode(Node):
 
         elif self.state == RobotState.TASK_DONE:
             self.task_done_timeout -= LOOP_PERIOD
+            self.driver.stop() # sinon le robot continue d'avancer 
 
             # Si timeout, passage en waiting
             if self.task_done_timeout <= 0:
@@ -194,6 +209,9 @@ class RobotNode(Node):
         """
         # Changement de l'état
         self.state = state
+        
+        # ajuste la couleur des leds selon l'état 
+        self.driver.set_leds(LED_COLORS[state])
 
         # Notification du changement sur le topic robot_state
         self.__notify_state_change()
@@ -262,8 +280,8 @@ class RobotNode(Node):
         speed = self.orca.compute_optimal_velocity(speed_pref)
 
         # Actionnement des moteurs
-        # TODO, appliquer la vitesse au moteurs
-
+        self.__apply_speed(speed)
+        
     def __get_pref_speed(self, pos)->tuple:
         """
         Calcul la vitesse préféré pour aller vers un point donnée.
@@ -281,6 +299,15 @@ class RobotNode(Node):
         speed_pref = (speed_pref[0]*ROBOT_MAX_SPEED/norm, speed_pref[1]*ROBOT_MAX_SPEED/norm)
 
         return speed_pref
+    
+    def __apply_speed(self, speed: tuple):
+        """
+        Convertit une vitesse holonome en consigne des roues et l'envoie au driver.
+        Pre:
+            Couple (X_dot, Y_dot) de la vitesse holonome en mm/s.
+        """
+        v_right, v_left = self.pose.convert_virtual_speed_to_wheel_speeds(speed[0], speed[1])
+        self.driver.send_wheel_speeds(v_right, v_left)
 
 def main(args=None):
     robot_id = int(sys.argv[1]) if len(sys.argv) > 1 else "None"
@@ -289,6 +316,9 @@ def main(args=None):
     node = RobotNode(robot_id)
     
     rclpy.spin(node)
+    
+    # arrêt du robot et des leds avant de quitter le noeud
+    node.driver.close()
     
     node.destroy_node()
     rclpy.shutdown()
