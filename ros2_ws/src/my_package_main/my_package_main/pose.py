@@ -129,3 +129,23 @@ class Pose:
         self.Y = pose.Y
         self.X_dot = pose.X_dot
         self.Y_dot = pose.Y_dot
+
+
+    # ----------------------------------------------------------------
+    # Fonctions de calcul cinématqiue des vitesses des roues à partir
+    # de la vitesse du robot virtuel (holonome)
+    # ----------------------------------------------------------------
+    def convert_virtual_speed_to_wheel_speeds(self, X_dot: float, Y_dot: float) -> tuple:
+        """
+        Calcule les vitesses des roues à partir de la vitesse
+        holonome donnée au centre imaginaire du robot.
+
+        Pre:
+            Deux flottants pour la vitesse holonome (X_dot, Y_dot) dans
+            le repère du sol en mm/s
+        Post:
+            Un couple de flottants (v_droite, v_gauche) en mm/s.
+        """
+        u = self.__M_inv() @ np.array([X_dot, Y_dot])
+
+        return float(u[0]), float(u[1])
