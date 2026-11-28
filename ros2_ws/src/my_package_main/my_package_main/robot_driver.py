@@ -85,7 +85,7 @@ class RobotDriver:
         Arrête le robot et libère le port série.
         """
         self.stop()
-        self.set_leds(0, 0, 0)
+        self.set_leds((0, 0, 0))  # éteint les leds
         if self.serial is not None:
             self.serial.close()
 

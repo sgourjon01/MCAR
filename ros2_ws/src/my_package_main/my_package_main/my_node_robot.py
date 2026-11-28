@@ -317,8 +317,11 @@ def main(args=None):
     
     rclpy.spin(node)
     
-    # arrêt du robot et des leds avant de quitter le noeud
-    node.driver.close()
-    
-    node.destroy_node()
-    rclpy.shutdown()
+    # arrête le robot si spin sort une exception
+    try:
+        rclpy.spin(node)
+    finally:
+        node.driver.close()
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
